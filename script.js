@@ -1,6 +1,16 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { 
+  getFirestore, 
+  collection, 
+  getDocs 
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
 // 🔥 Firebase 설정
 const firebaseConfig = {
@@ -12,26 +22,45 @@ const firebaseConfig = {
   appId: "1:693847220052:web:f2a863bd3bbef1087932c1"
 };
 
-// 🔥 초기화
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
 console.log("🔥 Firebase 연결 완료");
 
+// 🔥 DOM 요소
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const userEmail = document.getElementById("userEmail");
+const productGrid = document.querySelector(".product-grid");
+
+// 🔥 로그인
+const provider = new GoogleAuthProvider();
+
+loginBtn.addEventListener("click", async () => {
+  await signInWithPopup(auth, provider);
+});
+
+logoutBtn.addEventListener("click", async () => {
+  await signOut(auth);
+});
+
 // 🔥 로그인 상태 감지
 onAuthStateChanged(auth, (user) => {
   if (user) {
-    console.log("로그인됨:", user.email);
+    userEmail.textContent = user.email;
+    loginBtn.style.display = "none";
+    logoutBtn.style.display = "inline-block";
+  } else {
+    userEmail.textContent = "";
+    loginBtn.style.display = "inline-block";
+    logoutBtn.style.display = "none";
   }
 });
 
 // 🔥 상품 불러오기
-const productGrid = document.querySelector(".product-grid");
-
 async function loadProducts() {
   const querySnapshot = await getDocs(collection(db, "products"));
-
   productGrid.innerHTML = "";
 
   querySnapshot.forEach((doc) => {
@@ -53,40 +82,6 @@ async function loadProducts() {
 
 loadProducts();
 
-import { signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-
-const loginBtn = document.getElementById("loginBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const userEmail = document.getElementById("userEmail");
-
-const provider = new GoogleAuthProvider();
-
-// 🔥 로그인 버튼
-loginBtn.addEventListener("click", async () => {
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (error) {
-    console.error("로그인 실패:", error);
-  }
-});
-
-// 🔥 로그아웃 버튼
-logoutBtn.addEventListener("click", async () => {
-  await signOut(auth);
-});
-
-// 🔥 로그인 상태 감지
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    userEmail.textContent = user.email;
-    loginBtn.style.display = "none";
-    logoutBtn.style.display = "inline-block";
-  } else {
-    userEmail.textContent = "";
-    loginBtn.style.display = "inline-block";
-    logoutBtn.style.display = "none";
-  }
-});
 
 
 
