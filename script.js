@@ -28,3 +28,4 @@ onAuthStateChanged(window.auth, (user) => {
     logoutBtn.style.display = "none";
   }
 });
+
