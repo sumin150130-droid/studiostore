@@ -31,46 +31,17 @@
     <button>높은 가격순</button>
   </div>
 
-  <div class="product-grid">
-    <div class="card">
-      <h3>샘플 에셋</h3>
-      <p class="price">₩ 5,000</p>
-      <button>장바구니 담기</button>
-    </div>
-  </div>
+  <!-- 🔥 여기 안에 DB 상품이 자동으로 들어옴 -->
+  <div class="product-grid"></div>
 
 </main>
 
-<!-- 로그인 로직 -->
+<!-- 🔥 Firebase + 모든 로직은 script.js 안에서만 -->
 <script type="module" src="script.js"></script>
-
-<!-- Firebase 연결 -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-  import { getAuth } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBkmrbF-V9gNQiFhEjynULsYjpr5EQWErA",
-    authDomain: "studiostore-4bf29.firebaseapp.com",
-    projectId: "studiostore-4bf29",
-    storageBucket: "studiostore-4bf29.firebasestorage.app",
-    messagingSenderId: "693847220052",
-    appId: "1:693847220052:web:f2a863bd3bbef1087932c1"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  window.auth = auth;
-  window.db = db;
-
-  console.log("🔥 Firebase 연결 완료");
-</script>
 
 </body>
 </html>
+
 
 
 
