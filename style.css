@@ -1,0 +1,85 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #0f1117;
+  color: white;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 30px;
+  background-color: #161b22;
+  border-bottom: 1px solid #222;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: bold;
+  color: #00bcd4;
+}
+
+.nav-right button {
+  margin-left: 10px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #00bcd4;
+  cursor: pointer;
+}
+
+.nav-right button:hover {
+  background: #00e5ff;
+}
+
+.container {
+  padding: 40px;
+  max-width: 1100px;
+  margin: auto;
+}
+
+.filter-bar {
+  margin: 20px 0;
+}
+
+.filter-bar button {
+  margin-right: 10px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 20px;
+  background: #1f2937;
+  color: white;
+  cursor: pointer;
+}
+
+.filter-bar button:hover {
+  background: #00bcd4;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: #1a1f2b;
+  padding: 20px;
+  border-radius: 12px;
+  transition: 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  background: #202736;
+}
+
+.card button {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #00bcd4;
+  cursor: pointer;
+}
