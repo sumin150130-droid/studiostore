@@ -24,23 +24,24 @@
   <h1>에셋 마켓</h1>
   <p class="subtitle">로블록스 스튜디오 에셋을 만나보세요.</p>
 
+  <!-- 🔥 정렬 버튼 (id 필수) -->
   <div class="filter-bar">
-    <button>전체</button>
-    <button>인기</button>
-    <button>낮은 가격순</button>
-    <button>높은 가격순</button>
+    <button id="sortAll">전체</button>
+    <button id="sortPopular">인기</button>
+    <button id="sortLow">낮은 가격순</button>
+    <button id="sortHigh">높은 가격순</button>
   </div>
 
-  <!-- 🔥 여기 안에 DB 상품이 자동으로 들어옴 -->
+  <!-- 🔥 DB 상품 자동 출력 영역 -->
   <div class="product-grid"></div>
 
 </main>
 
-<!-- 🔥 Firebase + 모든 로직은 script.js 안에서만 -->
 <script type="module" src="script.js"></script>
 
 </body>
 </html>
+
 
 
 
