@@ -34,6 +34,11 @@ const logoutBtn = document.getElementById("logoutBtn");
 const userEmail = document.getElementById("userEmail");
 const productGrid = document.querySelector(".product-grid");
 
+const sortAll = document.getElementById("sortAll");
+const sortLow = document.getElementById("sortLow");
+const sortHigh = document.getElementById("sortHigh");
+const sortPopular = document.getElementById("sortPopular");
+
 // 🔥 로그인
 const provider = new GoogleAuthProvider();
 
@@ -58,21 +63,34 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
+// 🔥 상품 데이터 저장용 배열
+let productsData = [];
+
 // 🔥 상품 불러오기
 async function loadProducts() {
   const querySnapshot = await getDocs(collection(db, "products"));
-  productGrid.innerHTML = "";
+  productsData = [];
 
   querySnapshot.forEach((doc) => {
-    const data = doc.data();
+    productsData.push(doc.data());
+  });
 
+  renderProducts(productsData);
+}
+
+// 🔥 상품 렌더링
+function renderProducts(data) {
+  productGrid.innerHTML = "";
+
+  data.forEach((item) => {
     const card = document.createElement("div");
     card.className = "card";
 
     card.innerHTML = `
-      <img src="${data.image}">
-      <h3>${data.name}</h3>
-      <p class="price">₩ ${data.price.toLocaleString()}</p>
+      <img src="${item.image}">
+      <h3>${item.name}</h3>
+      <p class="price">₩ ${item.price.toLocaleString()}</p>
+      <p style="font-size:12px;color:gray;">판매 ${item.sales || 0}회</p>
       <button>장바구니 담기</button>
     `;
 
@@ -80,7 +98,32 @@ async function loadProducts() {
   });
 }
 
+// 🔥 정렬 기능
+
+sortAll?.addEventListener("click", () => {
+  renderProducts(productsData);
+});
+
+sortLow?.addEventListener("click", () => {
+  const sorted = [...productsData].sort((a, b) => a.price - b.price);
+  renderProducts(sorted);
+});
+
+sortHigh?.addEventListener("click", () => {
+  const sorted = [...productsData].sort((a, b) => b.price - a.price);
+  renderProducts(sorted);
+});
+
+sortPopular?.addEventListener("click", () => {
+  const sorted = [...productsData].sort((a, b) => 
+    (b.sales || 0) - (a.sales || 0)
+  );
+  renderProducts(sorted);
+});
+
+// 🔥 실행
 loadProducts();
+
 
 
 
