@@ -53,4 +53,40 @@ async function loadProducts() {
 
 loadProducts();
 
+import { signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const userEmail = document.getElementById("userEmail");
+
+const provider = new GoogleAuthProvider();
+
+// 🔥 로그인 버튼
+loginBtn.addEventListener("click", async () => {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (error) {
+    console.error("로그인 실패:", error);
+  }
+});
+
+// 🔥 로그아웃 버튼
+logoutBtn.addEventListener("click", async () => {
+  await signOut(auth);
+});
+
+// 🔥 로그인 상태 감지
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    userEmail.textContent = user.email;
+    loginBtn.style.display = "none";
+    logoutBtn.style.display = "inline-block";
+  } else {
+    userEmail.textContent = "";
+    loginBtn.style.display = "inline-block";
+    logoutBtn.style.display = "none";
+  }
+});
+
+
 
