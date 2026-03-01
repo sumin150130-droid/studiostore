@@ -18,5 +18,32 @@
 </main>
 
 <script src="script.js"></script>
+
+<!-- 🔥 Firebase 시작 -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+  import { getAuth } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBkmrbF-V9gNQiFhEjynULsYjpr5EQWErA",
+    authDomain: "studiostore-4bf29.firebaseapp.com",
+    projectId: "studiostore-4bf29",
+    storageBucket: "studiostore-4bf29.firebasestorage.app",
+    messagingSenderId: "693847220052",
+    appId: "1:693847220052:web:f2a863bd3bbef1087932c1"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  window.auth = auth;
+  window.db = db;
+
+  console.log("🔥 Firebase 연결 완료");
+</script>
+<!-- 🔥 Firebase 끝 -->
+
 </body>
 </html>
