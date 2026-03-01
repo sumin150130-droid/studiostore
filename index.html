@@ -2,28 +2,49 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>로블록스 스튜디오 샵</title>
+  <title>StudioStore</title>
   <meta name="description" content="로블록스 스튜디오 에셋 판매 사이트">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header>
-  로블록스 스튜디오 샵
-  <button id="loginBtn">로그인</button>
-  <button id="logoutBtn" style="display:none;">로그아웃</button>
+<header class="navbar">
+  <div class="logo">StudioStore</div>
+
+  <div class="nav-right">
+    <span id="userEmail"></span>
+    <button id="loginBtn">로그인</button>
+    <button id="logoutBtn" style="display:none;">로그아웃</button>
+  </div>
 </header>
 
-<main>
-  <h1>환영합니다</h1>
-  <p>이 사이트는 순수 코딩으로 제작되었습니다.</p>
+<main class="container">
+
+  <h1>에셋 마켓</h1>
+  <p class="subtitle">로블록스 스튜디오 에셋을 만나보세요.</p>
+
+  <div class="filter-bar">
+    <button>전체</button>
+    <button>인기</button>
+    <button>낮은 가격순</button>
+    <button>높은 가격순</button>
+  </div>
+
+  <div class="product-grid">
+    <div class="card">
+      <h3>샘플 에셋</h3>
+      <p class="price">₩ 5,000</p>
+      <button>장바구니 담기</button>
+    </div>
+  </div>
+
 </main>
 
-<!-- 🔥 script.js를 module로 변경 -->
+<!-- 로그인 로직 -->
 <script type="module" src="script.js"></script>
 
-<!-- 🔥 Firebase 시작 -->
+<!-- Firebase 연결 -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
   import { getAuth } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
@@ -47,8 +68,8 @@
 
   console.log("🔥 Firebase 연결 완료");
 </script>
-<!-- 🔥 Firebase 끝 -->
 
 </body>
 </html>
+
 
