@@ -1,44 +1,73 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>StudioStore</title>
-  <meta name="description" content="로블록스 스튜디오 에셋 판매 사이트">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+
+<meta charset="UTF-8">
+<title>StudioStore</title>
+
+<meta name="description" content="로블록스 스튜디오 에셋 판매 사이트">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="style.css">
+
 </head>
+
 <body>
 
 <header class="navbar">
+
   <div class="logo">StudioStore</div>
 
   <div class="nav-right">
+
     <span id="userEmail"></span>
+
     <button id="loginBtn">로그인</button>
+
     <button id="logoutBtn" style="display:none;">로그아웃</button>
+
+    <!-- 관리자 전용 -->
+    <button id="adminBtn" style="display:none;">상품 추가</button>
+
   </div>
+
 </header>
+
 
 <main class="container">
 
-  <h1>에셋 마켓</h1>
-  <p class="subtitle">로블록스 스튜디오 에셋을 만나보세요.</p>
+<h1>에셋 마켓</h1>
 
-  <!-- 정렬 버튼 -->
-  <div class="filter-bar">
-    <button id="sortAll">전체</button>
-    <button id="sortPopular">인기</button>
-    <button id="sortLow">낮은 가격순</button>
-    <button id="sortHigh">높은 가격순</button>
-  </div>
+<p class="subtitle">로블록스 스튜디오 에셋을 만나보세요.</p>
 
-  <!-- 상품 목록 -->
-  <div class="product-grid"></div>
+
+<!-- 정렬 버튼 -->
+<div class="filter-bar">
+
+<button id="sortAll">전체</button>
+
+<button id="sortPopular">인기</button>
+
+<button id="sortLow">낮은 가격순</button>
+
+<button id="sortHigh">높은 가격순</button>
+
+</div>
+
+
+<!-- 상품 목록 -->
+<div class="product-grid"></div>
 
 </main>
 
-<!-- 🔥 상품 상세 모달 -->
+
+
+<!-- ===================== -->
+<!-- 상품 상세 모달 -->
+<!-- ===================== -->
+
 <div id="productModal" class="modal">
+
   <div class="modal-content">
 
     <span id="modalClose">&times;</span>
@@ -54,9 +83,38 @@
     <button id="modalBuy">구매하기</button>
 
   </div>
+
 </div>
 
-<!-- 모든 JS -->
+
+
+<!-- ===================== -->
+<!-- 관리자 상품 추가 모달 -->
+<!-- ===================== -->
+
+<div id="adminModal" class="modal">
+
+  <div class="modal-content">
+
+    <span id="adminClose">&times;</span>
+
+    <h2>상품 추가</h2>
+
+    <input id="adminName" placeholder="상품 이름">
+
+    <input id="adminPrice" placeholder="가격">
+
+    <input id="adminImage" placeholder="이미지 URL">
+
+    <button id="adminUpload">상품 등록</button>
+
+  </div>
+
+</div>
+
+
+
+<!-- JS -->
 <script type="module" src="script.js"></script>
 
 </body>
