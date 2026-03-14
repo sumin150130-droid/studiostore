@@ -1,61 +1,42 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-
 <meta charset="UTF-8">
-<title>StudioStore</title>
+<title>Roblox Studio Store</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <link rel="stylesheet" href="style.css">
-
 </head>
 
 <body>
-
-
-<!-- ===== 상단바 ===== -->
 
 <header class="navbar">
 
 <div class="logo">Roblox Studio Store</div>
 
 <div class="search-box">
-<input id="searchInput" placeholder="원하는 상품을 찾아보세요">
+<input id="searchInput" placeholder="에셋을 검색하세요">
 </div>
 
 <div class="nav-right">
-
 <span id="userEmail"></span>
 
 <button id="loginBtn">로그인</button>
 <button id="logoutBtn" style="display:none;">로그아웃</button>
 
-<button id="adminBtn" style="display:none;">상품추가</button>
-<button id="adminPanelBtn" style="display:none;">관리자패널</button>
-
+<button id="adminBtn" style="display:none;">상품 추가</button>
+<button id="adminPanelBtn" style="display:none;">관리자 패널</button>
 </div>
 
 </header>
 
 
-
-<!-- ===== 메인 배너 ===== -->
-
 <section class="hero">
-
 <div class="hero-text">
-
-<h1>로블록스의 새로운 발견!</h1>
-
-<p>스튜디오 스토어</p>
-
+<h1>Roblox Studio Assets Marketplace</h1>
+<p>로블록스 스튜디오 에셋을 공유하세요</p>
 </div>
-
 </section>
 
-
-
-<!-- ===== 카테고리 버튼 ===== -->
 
 <section class="category-bar">
 
@@ -67,9 +48,6 @@
 </section>
 
 
-
-<!-- ===== 상품 ===== -->
-
 <main class="container">
 
 <div class="product-grid"></div>
@@ -77,8 +55,6 @@
 </main>
 
 
-
-<!-- ===== 상품 모달 ===== -->
 
 <div id="productModal" class="modal">
 
@@ -91,7 +67,6 @@
 <h2 id="modalName"></h2>
 
 <p id="modalPrice"></p>
-<p id="modalSales"></p>
 
 <input id="buyerPhone" placeholder="전화번호">
 <input id="buyerDiscord" placeholder="디스코드 ID">
@@ -103,8 +78,6 @@
 </div>
 
 
-
-<!-- ===== 관리자 상품 추가 ===== -->
 
 <div id="adminModal" class="modal">
 
@@ -126,15 +99,13 @@
 
 
 
-<!-- ===== 관리자 패널 ===== -->
-
 <div id="adminPanel" class="modal">
 
 <div class="modal-content">
 
 <span id="adminPanelClose">&times;</span>
 
-<h2>구매 내역</h2>
+<h2>구매 요청 목록</h2>
 
 <div id="orderList"></div>
 
@@ -142,13 +113,10 @@
 
 </div>
 
-
-
 <script type="module" src="script.js"></script>
 
 </body>
 </html>
-
 
 
 
