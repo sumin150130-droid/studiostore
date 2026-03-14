@@ -22,7 +22,43 @@ font-weight:700;
 color:#111;
 }
 
-/* ===== 로그인 버튼 ===== */
+/* ===== 검색창 ===== */
+
+.search-box{
+flex:1;
+display:flex;
+justify-content:center;
+position:relative;
+}
+
+.search-box input{
+
+width:460px;
+
+padding:12px 18px;
+
+border-radius:30px;
+
+border:1px solid #ddd;
+
+background:white;
+
+outline:none;
+
+box-shadow:0 2px 8px rgba(0,0,0,0.06);
+
+font-size:14px;
+
+transition:0.2s;
+
+}
+
+.search-box input:focus{
+border-color:#5b6ef5;
+box-shadow:0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* ===== 버튼 ===== */
 
 .nav-right button{
 margin-left:10px;
@@ -33,37 +69,10 @@ background:#5b6ef5;
 color:white;
 cursor:pointer;
 font-size:13px;
+transition:0.2s;
 }
 
 .nav-right button:hover
-
-/* ===== 검색창 ===== */
-
-.search-bar{
-display:flex;
-justify-content:center;
-margin-top:20px;
-}
-
-.search-bar input{
-
-width:520px;
-
-padding:12px 20px;
-
-border-radius:30px;
-
-border:1px solid #ddd;
-
-outline:none;
-
-background:white;
-
-box-shadow:0 2px 8px rgba(0,0,0,0.05);
-
-font-size:14px;
-
-}
 
 /* ===== 메인 배너 ===== */
 
@@ -105,7 +114,7 @@ opacity:0.9;
 
 /* ===== 카테고리 버튼 ===== */
 
-.filter-bar{
+.category-bar{
 
 display:flex;
 
@@ -119,15 +128,15 @@ flex-wrap:wrap;
 
 }
 
-.filter-bar button{
+.category-bar button{
 
-padding:8px 16px;
+padding:9px 18px;
 
-border-radius:20px;
+border-radius:25px;
 
-border:1px solid #e5e7eb;
+border:none;
 
-background:white;
+background:#e9edf5;
 
 cursor:pointer;
 
@@ -137,11 +146,13 @@ transition:0.2s;
 
 }
 
-.filter-bar button:hover{
+.category-bar button:hover{
 
-background:#ffb4b4;
+background:#5b6ef5;
 
-color:#111;
+color:white;
+
+transform:translateY(-1px);
 
 }
 
@@ -178,6 +189,8 @@ box-shadow:0 6px 20px rgba(0,0,0,0.05);
 cursor:pointer;
 
 transition:0.25s;
+
+position:relative;
 
 }
 
@@ -216,6 +229,34 @@ font-weight:700;
 margin-top:4px;
 
 }
+
+/* 관리자 삭제 버튼 */
+
+.deleteBtn{
+
+position:absolute;
+
+top:10px;
+
+right:10px;
+
+padding:5px 10px;
+
+background:#ff4d4f;
+
+color:white;
+
+border:none;
+
+border-radius:6px;
+
+font-size:12px;
+
+cursor:pointer;
+
+}
+
+.deleteBtn:hover
 
 /* ===== 모달 ===== */
 
