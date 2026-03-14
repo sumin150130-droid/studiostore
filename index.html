@@ -24,7 +24,7 @@
   <h1>에셋 마켓</h1>
   <p class="subtitle">로블록스 스튜디오 에셋을 만나보세요.</p>
 
-  <!-- 🔥 정렬 버튼 (id 필수) -->
+  <!-- 정렬 버튼 -->
   <div class="filter-bar">
     <button id="sortAll">전체</button>
     <button id="sortPopular">인기</button>
@@ -32,11 +32,31 @@
     <button id="sortHigh">높은 가격순</button>
   </div>
 
-  <!-- 🔥 DB 상품 자동 출력 영역 -->
+  <!-- 상품 목록 -->
   <div class="product-grid"></div>
 
 </main>
 
+<!-- 🔥 상품 상세 모달 -->
+<div id="productModal" class="modal">
+  <div class="modal-content">
+
+    <span id="modalClose">&times;</span>
+
+    <img id="modalImage">
+
+    <h2 id="modalName"></h2>
+
+    <p id="modalPrice"></p>
+
+    <p id="modalSales"></p>
+
+    <button id="modalBuy">구매하기</button>
+
+  </div>
+</div>
+
+<!-- 모든 JS -->
 <script type="module" src="script.js"></script>
 
 </body>
