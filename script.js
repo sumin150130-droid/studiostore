@@ -1,246 +1,228 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import {
-getAuth,
-GoogleAuthProvider,
-signInWithPopup,
-signOut,
-onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+body{
+margin:0;
+font-family:'Segoe UI',sans-serif;
+background:#f4f5f7;
+}
 
-import {
-getFirestore,
-collection,
-getDocs,
-doc,
-updateDoc,
-addDoc
-} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+/* ===== 상단바 ===== */
 
+.navbar{
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:14px 40px;
+background:white;
+border-bottom:1px solid #e5e7eb;
+}
 
-const firebaseConfig={
-apiKey:"AIzaSyBkmrbF-V9gNQiFhEjynULsYjpr5EQWErA",
-authDomain:"studiostore-4bf29.firebaseapp.com",
-projectId:"studiostore-4bf29",
-storageBucket:"studiostore-4bf29.firebasestorage.app",
-messagingSenderId:"693847220052",
-appId:"1:693847220052:web:f2a863bd3bbef1087932c1"
-};
+.logo{
+font-weight:700;
+font-size:18px;
+}
 
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-const db=getFirestore(app);
+/* 검색 */
 
-const ADMIN_EMAIL="sumin150130@gmail.com";
+.search-box{
+flex:1;
+display:flex;
+justify-content:center;
+}
 
-const loginBtn=document.getElementById("loginBtn");
-const logoutBtn=document.getElementById("logoutBtn");
-const userEmail=document.getElementById("userEmail");
+.search-box input{
+width:420px;
+padding:12px 20px;
+border-radius:30px;
+border:1px solid #ddd;
+background:#fafafa;
+outline:none;
+}
 
-const adminBtn=document.getElementById("adminBtn");
-const adminPanelBtn=document.getElementById("adminPanelBtn");
+/* 버튼 */
 
-const productGrid=document.querySelector(".product-grid");
+.nav-right button{
+margin-left:10px;
+padding:7px 16px;
+border-radius:20px;
+border:none;
+background:#5b6ef5;
+color:white;
+cursor:pointer;
+}
 
-const searchInput=document.getElementById("searchInput");
+/* ===== 배너 ===== */
 
-const sortAll=document.getElementById("sortAll");
-const sortLow=document.getElementById("sortLow");
-const sortHigh=document.getElementById("sortHigh");
-const sortPopular=document.getElementById("sortPopular");
+.hero{
 
-const modal=document.getElementById("productModal");
-const modalImage=document.getElementById("modalImage");
-const modalName=document.getElementById("modalName");
-const modalPrice=document.getElementById("modalPrice");
-const modalSales=document.getElementById("modalSales");
-const modalClose=document.getElementById("modalClose");
-const modalBuy=document.getElementById("modalBuy");
+width:90%;
+height:300px;
 
-const buyerPhone=document.getElementById("buyerPhone");
-const buyerDiscord=document.getElementById("buyerDiscord");
+margin:30px auto;
 
-const adminModal=document.getElementById("adminModal");
-const adminClose=document.getElementById("adminClose");
+border-radius:20px;
 
-const adminName=document.getElementById("adminName");
-const adminPrice=document.getElementById("adminPrice");
-const adminImage=document.getElementById("adminImage");
-const adminUpload=document.getElementById("adminUpload");
+background:url("https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070") center/cover;
 
-const adminPanel=document.getElementById("adminPanel");
-const adminPanelClose=document.getElementById("adminPanelClose");
-const orderList=document.getElementById("orderList");
+display:flex;
+align-items:center;
+justify-content:center;
 
-const provider=new GoogleAuthProvider();
+color:white;
+text-align:center;
 
-loginBtn.onclick=()=>signInWithPopup(auth,provider);
-logoutBtn.onclick=()=>signOut(auth);
-
-onAuthStateChanged(auth,user=>{
-
-if(user){
-
-userEmail.textContent=user.email;
-
-loginBtn.style.display="none";
-logoutBtn.style.display="inline-block";
-
-if(user.email===ADMIN_EMAIL){
-
-adminBtn.style.display="inline-block";
-adminPanelBtn.style.display="inline-block";
+box-shadow:0 10px 30px rgba(0,0,0,0.25);
 
 }
 
-}else{
+.hero h1{
+font-size:32px;
+margin:0;
+}
 
-loginBtn.style.display="inline-block";
-logoutBtn.style.display="none";
+.hero p{
+margin-top:10px;
+}
+
+/* ===== 카테고리 ===== */
+
+.category-bar{
+
+display:flex;
+justify-content:center;
+gap:10px;
+
+margin:20px;
+
+flex-wrap:wrap;
 
 }
 
-});
+.category-bar button{
 
-let productsData=[];
-let currentProduct=null;
+padding:8px 18px;
 
-async function loadProducts(){
+border-radius:20px;
 
-const querySnapshot=await getDocs(collection(db,"products"));
+border:1px solid #ddd;
 
-productsData=[];
+background:white;
 
-querySnapshot.forEach(docItem=>{
-productsData.push({id:docItem.id,...docItem.data()});
-});
-
-renderProducts(productsData);
+cursor:pointer;
 
 }
 
-function renderProducts(data){
+/* ===== 상품 ===== */
 
-productGrid.innerHTML="";
+.container{
+max-width:1200px;
+margin:auto;
+padding:30px;
+}
 
-data.forEach(item=>{
+.product-grid{
 
-const card=document.createElement("div");
-card.className="card";
+display:grid;
 
-card.innerHTML=`
-<img src="${item.image}">
-<h3>${item.name}</h3>
-<p class="price">₩ ${item.price.toLocaleString()}</p>
-<p style="font-size:12px;color:gray;">판매 ${item.sales||0}회</p>
-`;
+grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
 
-card.onclick=()=>{
-
-currentProduct=item;
-
-modal.style.display="block";
-
-modalImage.src=item.image;
-modalName.textContent=item.name;
-modalPrice.textContent="₩ "+item.price.toLocaleString();
-modalSales.textContent="판매 "+(item.sales||0)+"회";
-
-};
-
-productGrid.appendChild(card);
-
-});
+gap:25px;
 
 }
 
-searchInput.oninput=()=>{
+.card{
 
-const keyword=searchInput.value.toLowerCase();
+background:white;
 
-renderProducts(productsData.filter(p=>p.name.toLowerCase().includes(keyword)));
+padding:20px;
 
-};
+border-radius:14px;
 
-sortLow.onclick=()=>renderProducts([...productsData].sort((a,b)=>a.price-b.price));
-sortHigh.onclick=()=>renderProducts([...productsData].sort((a,b)=>b.price-a.price));
-sortPopular.onclick=()=>renderProducts([...productsData].sort((a,b)=>(b.sales||0)-(a.sales||0)));
-sortAll.onclick=()=>renderProducts(productsData);
+box-shadow:0 5px 20px rgba(0,0,0,0.08);
 
-modalBuy.onclick=async()=>{
+cursor:pointer;
 
-const phone=buyerPhone.value;
-const discord=buyerDiscord.value;
-
-if(!phone||!discord){
-
-alert("전화번호와 디코 입력");
-
-return;
+transition:0.2s;
 
 }
 
-await addDoc(collection(db,"orders"),{
+.card:hover{
 
-phone,
-discord,
-product:currentProduct.name,
-date:Date.now()
+transform:translateY(-6px);
 
-});
+}
 
-alert("구매 요청 완료");
+.card img{
 
-modal.style.display="none";
+width:100%;
+border-radius:8px;
 
-};
+}
 
-adminBtn.onclick=()=>adminModal.style.display="block";
+.price{
+color:#5b6ef5;
+font-weight:bold;
+}
 
-adminUpload.onclick=async()=>{
+/* ===== 모달 ===== */
 
-await addDoc(collection(db,"products"),{
+.modal{
 
-name:adminName.value,
-price:Number(adminPrice.value),
-image:adminImage.value,
-sales:0
+display:none;
 
-});
+position:fixed;
 
-adminModal.style.display="none";
+left:0;
+top:0;
 
-loadProducts();
+width:100%;
+height:100%;
 
-};
+background:rgba(0,0,0,0.5);
 
-adminPanelBtn.onclick=async()=>{
+}
 
-adminPanel.style.display="block";
+.modal-content{
 
-const querySnapshot=await getDocs(collection(db,"orders"));
+background:white;
 
-orderList.innerHTML="";
+width:420px;
 
-querySnapshot.forEach(doc=>{
+margin:120px auto;
 
-const data=doc.data();
+padding:25px;
 
-const div=document.createElement("div");
+border-radius:12px;
 
-div.innerHTML=`${data.phone} , ${data.discord} : ${data.product}`;
+text-align:center;
 
-orderList.appendChild(div);
+}
 
-});
+.modal-content img{
+width:100%;
+border-radius:8px;
+}
 
-};
+.modal-content input{
 
-modalClose.onclick=()=>modal.style.display="none";
-adminClose.onclick=()=>adminModal.style.display="none";
-adminPanelClose.onclick=()=>adminPanel.style.display="none";
+width:95%;
+padding:10px;
 
-loadProducts();
+margin:6px;
 
+border:1px solid #ddd;
+
+border-radius:6px;
+
+}
+
+#modalClose,#adminClose,#adminPanelClose{
+
+float:right;
+
+font-size:22px;
+
+cursor:pointer;
+
+}
 
 
 
