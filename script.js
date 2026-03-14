@@ -1,228 +1,176 @@
-body{
-margin:0;
-font-family:'Segoe UI',sans-serif;
-background:#f4f5f7;
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import {
+getAuth,
+GoogleAuthProvider,
+signInWithPopup,
+signOut,
+onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+
+import {
+getFirestore,
+collection,
+getDocs,
+doc,
+deleteDoc,
+addDoc
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyBkmrbF-V9gNQiFhEjynULsYjpr5EQWErA",
+authDomain:"studiostore-4bf29.firebaseapp.com",
+projectId:"studiostore-4bf29",
+storageBucket:"studiostore-4bf29.firebasestorage.app",
+messagingSenderId:"693847220052",
+appId:"1:693847220052:web:f2a863bd3bbef1087932c1"
+};
+
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
+
+const ADMIN_EMAIL="[sumin150130@gmail.com](mailto:sumin150130@gmail.com)";
+
+const loginBtn=document.getElementById("loginBtn");
+const logoutBtn=document.getElementById("logoutBtn");
+const userEmail=document.getElementById("userEmail");
+
+const adminBtn=document.getElementById("adminBtn");
+const adminPanelBtn=document.getElementById("adminPanelBtn");
+
+const productGrid=document.querySelector(".product-grid");
+const searchInput=document.getElementById("searchInput");
+
+const modal=document.getElementById("productModal");
+const modalImage=document.getElementById("modalImage");
+const modalName=document.getElementById("modalName");
+const modalPrice=document.getElementById("modalPrice");
+const modalClose=document.getElementById("modalClose");
+const modalBuy=document.getElementById("modalBuy");
+
+const buyerPhone=document.getElementById("buyerPhone");
+const buyerDiscord=document.getElementById("buyerDiscord");
+
+const provider=new GoogleAuthProvider();
+
+loginBtn.onclick=()=>signInWithPopup(auth,provider);
+logoutBtn.onclick=()=>signOut(auth);
+
+onAuthStateChanged(auth,user=>{
+if(user){
+userEmail.textContent=user.email;
+loginBtn.style.display="none";
+logoutBtn.style.display="inline-block";
+
+if(user.email===ADMIN_EMAIL){
+adminBtn.style.display="inline-block";
+adminPanelBtn.style.display="inline-block";
 }
 
-/* ===== 상단바 ===== */
-
-.navbar{
-display:flex;
-align-items:center;
-justify-content:space-between;
-padding:14px 40px;
-background:white;
-border-bottom:1px solid #e5e7eb;
+}else{
+loginBtn.style.display="inline-block";
+logoutBtn.style.display="none";
 }
+});
 
-.logo{
-font-weight:700;
-font-size:18px;
-}
+let productsData=[];
+let currentProduct=null;
 
-/* 검색 */
+async function loadProducts(){
 
-.search-box{
-flex:1;
-display:flex;
-justify-content:center;
-}
+const querySnapshot=await getDocs(collection(db,"products"));
 
-.search-box input{
-width:420px;
-padding:12px 20px;
-border-radius:30px;
-border:1px solid #ddd;
-background:#fafafa;
-outline:none;
-}
+productsData=[];
 
-/* 버튼 */
+querySnapshot.forEach(docItem=>{
+productsData.push({id:docItem.id,...docItem.data()});
+});
 
-.nav-right button{
-margin-left:10px;
-padding:7px 16px;
-border-radius:20px;
-border:none;
-background:#5b6ef5;
-color:white;
-cursor:pointer;
-}
-
-/* ===== 배너 ===== */
-
-.hero{
-
-width:90%;
-height:300px;
-
-margin:30px auto;
-
-border-radius:20px;
-
-background:url("https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070") center/cover;
-
-display:flex;
-align-items:center;
-justify-content:center;
-
-color:white;
-text-align:center;
-
-box-shadow:0 10px 30px rgba(0,0,0,0.25);
-
-}
-
-.hero h1{
-font-size:32px;
-margin:0;
-}
-
-.hero p{
-margin-top:10px;
-}
-
-/* ===== 카테고리 ===== */
-
-.category-bar{
-
-display:flex;
-justify-content:center;
-gap:10px;
-
-margin:20px;
-
-flex-wrap:wrap;
+renderProducts(productsData);
 
 }
 
-.category-bar button{
+function renderProducts(data){
 
-padding:8px 18px;
+productGrid.innerHTML="";
 
-border-radius:20px;
+data.forEach(item=>{
 
-border:1px solid #ddd;
+const card=document.createElement("div");
+card.className="card";
 
-background:white;
+card.innerHTML=` <img src="${item.image}">
 
-cursor:pointer;
+<h3>${item.name}</h3>
+<p class="price">₩ ${item.price}</p>
+`;
 
-}
+card.onclick=()=>{
 
-/* ===== 상품 ===== */
+currentProduct=item;
 
-.container{
-max-width:1200px;
-margin:auto;
-padding:30px;
-}
+modal.style.display="block";
 
-.product-grid{
+modalImage.src=item.image;
+modalName.textContent=item.name;
+modalPrice.textContent="₩ "+item.price;
 
-display:grid;
+};
 
-grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+if(auth.currentUser && auth.currentUser.email===ADMIN_EMAIL){
 
-gap:25px;
+const del=document.createElement("button");
+del.textContent="삭제";
+del.className="deleteBtn";
 
-}
+del.onclick=async(e)=>{
 
-.card{
+e.stopPropagation();
 
-background:white;
+await deleteDoc(doc(db,"products",item.id));
 
-padding:20px;
+loadProducts();
 
-border-radius:14px;
+};
 
-box-shadow:0 5px 20px rgba(0,0,0,0.08);
-
-cursor:pointer;
-
-transition:0.2s;
-
-}
-
-.card:hover{
-
-transform:translateY(-6px);
+card.appendChild(del);
 
 }
 
-.card img{
+productGrid.appendChild(card);
 
-width:100%;
-border-radius:8px;
-
-}
-
-.price{
-color:#5b6ef5;
-font-weight:bold;
-}
-
-/* ===== 모달 ===== */
-
-.modal{
-
-display:none;
-
-position:fixed;
-
-left:0;
-top:0;
-
-width:100%;
-height:100%;
-
-background:rgba(0,0,0,0.5);
+});
 
 }
 
-.modal-content{
+searchInput.oninput=()=>{
 
-background:white;
+const keyword=searchInput.value.toLowerCase();
 
-width:420px;
+renderProducts(productsData.filter(p=>p.name.toLowerCase().includes(keyword)));
 
-margin:120px auto;
+};
 
-padding:25px;
+modalBuy.onclick=async()=>{
 
-border-radius:12px;
+await addDoc(collection(db,"orders"),{
 
-text-align:center;
+phone:buyerPhone.value,
+discord:buyerDiscord.value,
+product:currentProduct.name
 
-}
+});
 
-.modal-content img{
-width:100%;
-border-radius:8px;
-}
+alert("구매 요청 완료");
 
-.modal-content input{
+modal.style.display="none";
 
-width:95%;
-padding:10px;
+};
 
-margin:6px;
+modalClose.onclick=()=>modal.style.display="none";
 
-border:1px solid #ddd;
+loadProducts();
 
-border-radius:6px;
-
-}
-
-#modalClose,#adminClose,#adminPanelClose{
-
-float:right;
-
-font-size:22px;
-
-cursor:pointer;
-
-}
 
 
 
