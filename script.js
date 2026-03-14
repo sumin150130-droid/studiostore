@@ -203,6 +203,30 @@ window.onclick = (event) => {
 
 loadProducts();
 
+adminBtn?.addEventListener("click", async () => {
+
+  const name = prompt("상품 이름");
+  const price = Number(prompt("가격"));
+  const image = prompt("이미지 URL");
+
+  if(!name || !price || !image){
+    alert("취소됨");
+    return;
+  }
+
+  await addDoc(collection(db, "products"), {
+    name: name,
+    price: price,
+    image: image,
+    sales: 0
+  });
+
+  alert("상품 추가 완료");
+
+  loadProducts();
+
+});
+
 
 
 
