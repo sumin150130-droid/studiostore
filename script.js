@@ -124,6 +124,16 @@ sortPopular?.addEventListener("click", () => {
 // 🔥 실행
 loadProducts();
 
+modalClose.onclick = () => {
+  modal.style.display = "none";
+}
+
+window.onclick = (event) => {
+  if(event.target === modal){
+    modal.style.display = "none";
+  }
+}
+
 
 
 
