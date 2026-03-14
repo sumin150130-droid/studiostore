@@ -11,7 +11,8 @@ import {
   collection, 
   getDocs,
   doc,
-  updateDoc
+  updateDoc,
+  addDoc
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
 /* ---------------- Firebase ---------------- */
@@ -31,11 +32,16 @@ const db = getFirestore(app);
 
 console.log("🔥 Firebase 연결 완료");
 
+/* ---------------- 관리자 ---------------- */
+
+const ADMIN_EMAIL = "sumin150130@gmail.com";
+
 /* ---------------- DOM ---------------- */
 
 const loginBtn = document.getElementById("loginBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const userEmail = document.getElementById("userEmail");
+const adminBtn = document.getElementById("adminBtn");
 
 const productGrid = document.querySelector(".product-grid");
 
@@ -58,24 +64,39 @@ const modalBuy = document.getElementById("modalBuy");
 
 const provider = new GoogleAuthProvider();
 
-loginBtn.addEventListener("click", async () => {
+loginBtn?.addEventListener("click", async () => {
   await signInWithPopup(auth, provider);
 });
 
-logoutBtn.addEventListener("click", async () => {
+logoutBtn?.addEventListener("click", async () => {
   await signOut(auth);
 });
 
+/* ---------------- 로그인 상태 ---------------- */
+
 onAuthStateChanged(auth, (user) => {
+
   if (user) {
+
     userEmail.textContent = user.email;
+
     loginBtn.style.display = "none";
     logoutBtn.style.display = "inline-block";
+
+    if(user.email === ADMIN_EMAIL){
+      adminBtn.style.display = "inline-block";
+    }
+
   } else {
+
     userEmail.textContent = "";
+
     loginBtn.style.display = "inline-block";
     logoutBtn.style.display = "none";
+    adminBtn.style.display = "none";
+
   }
+
 });
 
 /* ---------------- 상품 데이터 ---------------- */
@@ -85,13 +106,13 @@ let currentProduct = null;
 
 /* ---------------- 상품 불러오기 ---------------- */
 
-async function loadProducts() {
+async function loadProducts(){
 
-  const querySnapshot = await getDocs(collection(db, "products"));
+  const querySnapshot = await getDocs(collection(db,"products"));
 
   productsData = [];
 
-  querySnapshot.forEach((docItem) => {
+  querySnapshot.forEach((docItem)=>{
 
     productsData.push({
       id: docItem.id,
@@ -106,11 +127,11 @@ async function loadProducts() {
 
 /* ---------------- 상품 렌더링 ---------------- */
 
-function renderProducts(data) {
+function renderProducts(data){
 
   productGrid.innerHTML = "";
 
-  data.forEach((item) => {
+  data.forEach((item)=>{
 
     const card = document.createElement("div");
     card.className = "card";
@@ -123,9 +144,7 @@ function renderProducts(data) {
       <button>장바구니 담기</button>
     `;
 
-    /* 카드 클릭 → 모달 */
-
-    card.addEventListener("click", () => {
+    card.addEventListener("click",()=>{
 
       currentProduct = item;
 
@@ -146,37 +165,43 @@ function renderProducts(data) {
 
 /* ---------------- 정렬 ---------------- */
 
-sortAll?.addEventListener("click", () => {
+sortAll?.addEventListener("click",()=>{
   renderProducts(productsData);
 });
 
-sortLow?.addEventListener("click", () => {
-  const sorted = [...productsData].sort((a, b) => a.price - b.price);
+sortLow?.addEventListener("click",()=>{
+
+  const sorted=[...productsData].sort((a,b)=>a.price-b.price);
   renderProducts(sorted);
+
 });
 
-sortHigh?.addEventListener("click", () => {
-  const sorted = [...productsData].sort((a, b) => b.price - a.price);
+sortHigh?.addEventListener("click",()=>{
+
+  const sorted=[...productsData].sort((a,b)=>b.price-a.price);
   renderProducts(sorted);
+
 });
 
-sortPopular?.addEventListener("click", () => {
-  const sorted = [...productsData].sort((a, b) => (b.sales || 0) - (a.sales || 0));
+sortPopular?.addEventListener("click",()=>{
+
+  const sorted=[...productsData].sort((a,b)=>(b.sales||0)-(a.sales||0));
   renderProducts(sorted);
+
 });
 
 /* ---------------- 구매 기능 ---------------- */
 
-modalBuy?.addEventListener("click", async () => {
+modalBuy?.addEventListener("click",async()=>{
 
-  if (!currentProduct) return;
+  if(!currentProduct) return;
 
-  const productRef = doc(db, "products", currentProduct.id);
+  const productRef = doc(db,"products",currentProduct.id);
 
   const newSales = (currentProduct.sales || 0) + 1;
 
-  await updateDoc(productRef, {
-    sales: newSales
+  await updateDoc(productRef,{
+    sales:newSales
   });
 
   currentProduct.sales = newSales;
@@ -187,23 +212,9 @@ modalBuy?.addEventListener("click", async () => {
 
 });
 
-/* ---------------- 모달 닫기 ---------------- */
+/* ---------------- 관리자 상품 추가 ---------------- */
 
-modalClose.onclick = () => {
-  modal.style.display = "none";
-};
-
-window.onclick = (event) => {
-  if (event.target === modal) {
-    modal.style.display = "none";
-  }
-};
-
-/* ---------------- 시작 ---------------- */
-
-loadProducts();
-
-adminBtn?.addEventListener("click", async () => {
+adminBtn?.addEventListener("click",async()=>{
 
   const name = prompt("상품 이름");
   const price = Number(prompt("가격"));
@@ -214,11 +225,11 @@ adminBtn?.addEventListener("click", async () => {
     return;
   }
 
-  await addDoc(collection(db, "products"), {
-    name: name,
-    price: price,
-    image: image,
-    sales: 0
+  await addDoc(collection(db,"products"),{
+    name:name,
+    price:price,
+    image:image,
+    sales:0
   });
 
   alert("상품 추가 완료");
@@ -226,6 +237,22 @@ adminBtn?.addEventListener("click", async () => {
   loadProducts();
 
 });
+
+/* ---------------- 모달 닫기 ---------------- */
+
+modalClose.onclick=()=>{
+  modal.style.display="none";
+};
+
+window.onclick=(event)=>{
+  if(event.target===modal){
+    modal.style.display="none";
+  }
+};
+
+/* ---------------- 시작 ---------------- */
+
+loadProducts();
 
 
 
