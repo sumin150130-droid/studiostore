@@ -11,6 +11,13 @@ import {
   collection, 
   getDocs 
 } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import { 
+  getFirestore, 
+  collection, 
+  getDocs,
+  doc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
 /* ---------------- Firebase ---------------- */
 
