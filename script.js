@@ -9,11 +9,6 @@ import {
 import { 
   getFirestore, 
   collection, 
-  getDocs 
-} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-import { 
-  getFirestore, 
-  collection, 
   getDocs,
   doc,
   updateDoc
@@ -49,7 +44,7 @@ const sortLow = document.getElementById("sortLow");
 const sortHigh = document.getElementById("sortHigh");
 const sortPopular = document.getElementById("sortPopular");
 
-/* ----------- 모달 요소 ----------- */
+/* ----------- 모달 ----------- */
 
 const modal = document.getElementById("productModal");
 const modalImage = document.getElementById("modalImage");
@@ -57,6 +52,7 @@ const modalName = document.getElementById("modalName");
 const modalPrice = document.getElementById("modalPrice");
 const modalSales = document.getElementById("modalSales");
 const modalClose = document.getElementById("modalClose");
+const modalBuy = document.getElementById("modalBuy");
 
 /* ---------------- 로그인 ---------------- */
 
@@ -85,6 +81,7 @@ onAuthStateChanged(auth, (user) => {
 /* ---------------- 상품 데이터 ---------------- */
 
 let productsData = [];
+let currentProduct = null;
 
 /* ---------------- 상품 불러오기 ---------------- */
 
@@ -94,8 +91,13 @@ async function loadProducts() {
 
   productsData = [];
 
-  querySnapshot.forEach((doc) => {
-    productsData.push(doc.data());
+  querySnapshot.forEach((docItem) => {
+
+    productsData.push({
+      id: docItem.id,
+      ...docItem.data()
+    });
+
   });
 
   renderProducts(productsData);
@@ -121,9 +123,11 @@ function renderProducts(data) {
       <button>장바구니 담기</button>
     `;
 
-    /* ---- 카드 클릭 → 모달 ---- */
+    /* 카드 클릭 → 모달 */
 
     card.addEventListener("click", () => {
+
+      currentProduct = item;
 
       modal.style.display = "block";
 
@@ -147,23 +151,39 @@ sortAll?.addEventListener("click", () => {
 });
 
 sortLow?.addEventListener("click", () => {
-
   const sorted = [...productsData].sort((a, b) => a.price - b.price);
   renderProducts(sorted);
-
 });
 
 sortHigh?.addEventListener("click", () => {
-
   const sorted = [...productsData].sort((a, b) => b.price - a.price);
   renderProducts(sorted);
-
 });
 
 sortPopular?.addEventListener("click", () => {
-
   const sorted = [...productsData].sort((a, b) => (b.sales || 0) - (a.sales || 0));
   renderProducts(sorted);
+});
+
+/* ---------------- 구매 기능 ---------------- */
+
+modalBuy?.addEventListener("click", async () => {
+
+  if (!currentProduct) return;
+
+  const productRef = doc(db, "products", currentProduct.id);
+
+  const newSales = (currentProduct.sales || 0) + 1;
+
+  await updateDoc(productRef, {
+    sales: newSales
+  });
+
+  currentProduct.sales = newSales;
+
+  modalSales.textContent = "판매 " + newSales + "회";
+
+  alert("구매 완료!");
 
 });
 
