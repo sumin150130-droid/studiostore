@@ -2,120 +2,207 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>Roblox Studio Store</title>
+<title>RSStore — Roblox Studio Store</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
+<!-- NAVBAR -->
 <header class="navbar">
-
-<div class="logo">Roblox Studio Store</div>
-
-<div class="search-box">
-<input id="searchInput" placeholder="에셋을 검색하세요">
-</div>
-
-<div class="nav-right">
-<span id="userEmail"></span>
-
-<button id="loginBtn">로그인</button>
-<button id="logoutBtn" style="display:none;">로그아웃</button>
-
-<button id="adminPanelBtn" style="display:none;">관리자 패널</button>
-</div>
-
+  <div class="nav-left">
+    <div class="logo">
+      <span class="logo-icon">⬡</span>
+      <span class="logo-text">RS<span class="logo-accent">Store</span></span>
+    </div>
+    <nav class="nav-links">
+      <a href="#" class="nav-link active">스토어</a>
+      <a href="#" class="nav-link">에셋</a>
+      <a href="#" class="nav-link">뉴스</a>
+    </nav>
+  </div>
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input id="searchInput" placeholder="에셋, 플러그인, 스크립트를 검색하세요…">
+  </div>
+  <div class="nav-right">
+    <span id="userEmail" class="user-email"></span>
+    <button id="loginBtn" class="btn-login">로그인</button>
+    <div id="userMenu" style="display:none;" class="user-menu">
+      <img id="userAvatar" src="" class="avatar" alt="avatar">
+      <span id="userName"></span>
+      <button id="logoutBtn" class="btn-logout">로그아웃</button>
+    </div>
+    <button id="adminPanelBtn" style="display:none;" class="btn-admin">⚙ 관리자</button>
+    <button class="theme-toggle" id="themeToggle" title="테마 변경">🌙</button>
+  </div>
 </header>
 
-
-<section class="hero">
-<div class="hero-text">
-<h1>Roblox Studio Assets Marketplace</h1>
-<p>로블록스 스튜디오 에셋을 공유하세요</p>
-</div>
+<!-- HERO SLIDER -->
+<section class="hero-slider">
+  <div class="slides-wrapper" id="slidesWrapper">
+    <div class="slide slide-1">
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="slide-badge">🔥 신규 에셋</div>
+        <h1>최고의 로블록스 스튜디오<br>에셋을 지금 만나보세요</h1>
+        <p>프리미엄 스크립트, 플러그인, 맵 에셋을 한 곳에서</p>
+        <button class="btn-hero" onclick="document.querySelector('.container').scrollIntoView({behavior:'smooth'})">둘러보기 →</button>
+      </div>
+    </div>
+    <div class="slide slide-2">
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="slide-badge">✨ 무료 에셋</div>
+        <h1>크리에이터를 위한<br>무료 리소스 컬렉션</h1>
+        <p>커뮤니티가 직접 만든 고퀄리티 무료 에셋</p>
+        <button class="btn-hero" onclick="document.getElementById('filterFree').click()">무료 에셋 보기 →</button>
+      </div>
+    </div>
+    <div class="slide slide-3">
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="slide-badge">💎 프리미엄</div>
+        <h1>당신의 게임을<br>한 단계 업그레이드</h1>
+        <p>전문 개발자가 제작한 프리미엄 플러그인 & 스크립트</p>
+        <button class="btn-hero" onclick="document.getElementById('sortPopular').click()">인기 에셋 보기 →</button>
+      </div>
+    </div>
+  </div>
+  <div class="slider-dots" id="sliderDots">
+    <span class="dot active" onclick="goSlide(0)"></span>
+    <span class="dot" onclick="goSlide(1)"></span>
+    <span class="dot" onclick="goSlide(2)"></span>
+  </div>
+  <button class="slider-arrow left" onclick="prevSlide()">‹</button>
+  <button class="slider-arrow right" onclick="nextSlide()">›</button>
 </section>
 
-
+<!-- CATEGORY BAR -->
 <section class="category-bar">
-
-<button id="sortAll">전체</button>
-<button id="sortPopular">인기</button>
-<button id="sortLow">낮은 가격순</button>
-<button id="sortHigh">높은 가격순</button>
-
+  <button class="cat-btn active" id="sortAll" data-filter="all">
+    <span class="cat-icon">⊞</span> 전체
+  </button>
+  <button class="cat-btn" id="sortPopular" data-filter="popular">
+    <span class="cat-icon">🔥</span> 인기
+  </button>
+  <button class="cat-btn" id="filterFree" data-filter="free">
+    <span class="cat-icon">🎁</span> 무료
+  </button>
+  <button class="cat-btn" id="sortLow" data-filter="lowprice">
+    <span class="cat-icon">↓</span> 낮은 가격순
+  </button>
+  <button class="cat-btn" id="sortHigh" data-filter="highprice">
+    <span class="cat-icon">↑</span> 높은 가격순
+  </button>
+  <button class="cat-btn" data-filter="script">
+    <span class="cat-icon">📜</span> 스크립트
+  </button>
+  <button class="cat-btn" data-filter="plugin">
+    <span class="cat-icon">🔧</span> 플러그인
+  </button>
+  <button class="cat-btn" data-filter="map">
+    <span class="cat-icon">🗺</span> 맵
+  </button>
+  <button class="cat-btn" data-filter="ui">
+    <span class="cat-icon">🖼</span> UI
+  </button>
 </section>
 
+<!-- TOP 4 SECTION -->
+<section class="top-section container">
+  <div class="section-header">
+    <div class="section-title-bar"></div>
+    <div>
+      <h2 class="section-title">🔥 인기 에셋 Top 4</h2>
+      <p class="section-sub">가장 많이 구매된 에셋이에요.</p>
+    </div>
+  </div>
+  <div class="top4-grid" id="top4Grid"></div>
+</section>
 
-<main class="container">
-
-<div class="product-grid"></div>
-
+<!-- MAIN GRID -->
+<main class="container" style="margin-top:0;">
+  <div class="section-header">
+    <div class="section-title-bar"></div>
+    <div>
+      <h2 class="section-title" id="gridTitle">전체 에셋</h2>
+      <p class="section-sub" id="gridCount"></p>
+    </div>
+  </div>
+  <div class="product-grid" id="productGrid"></div>
+  <div class="empty-state" id="emptyState" style="display:none;">
+    <div class="empty-icon">🔍</div>
+    <p>검색 결과가 없어요</p>
+  </div>
 </main>
 
-
-
+<!-- PRODUCT MODAL -->
 <div id="productModal" class="modal">
-
-<div class="modal-content">
-
-<span id="modalClose">&times;</span>
-
-<img id="modalImage">
-
-<h2 id="modalName"></h2>
-
-<p id="modalPrice"></p>
-
-<input id="buyerPhone" placeholder="전화번호">
-<input id="buyerDiscord" placeholder="디스코드 ID">
-
-<button id="modalBuy">구매 요청</button>
-
+  <div class="modal-backdrop" onclick="closeModal('productModal')"></div>
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('productModal')">✕</button>
+    <img id="modalImage" src="" alt="">
+    <div class="modal-body">
+      <div class="modal-badge" id="modalBadge"></div>
+      <h2 id="modalName"></h2>
+      <p id="modalDesc" class="modal-desc"></p>
+      <div class="modal-price-row">
+        <span class="modal-price" id="modalPrice"></span>
+        <span class="modal-sales" id="modalSales"></span>
+      </div>
+      <div class="modal-divider"></div>
+      <p class="modal-label">구매 정보 입력</p>
+      <input id="buyerPhone" placeholder="📱 전화번호" class="modal-input">
+      <input id="buyerDiscord" placeholder="💬 디스코드 ID (예: user#1234)" class="modal-input">
+      <button id="modalBuy" class="btn-buy">🛒 구매 요청하기</button>
+    </div>
+  </div>
 </div>
 
-</div>
-
-
-
+<!-- ADMIN ADD MODAL -->
 <div id="adminModal" class="modal">
-
-<div class="modal-content">
-
-<span id="adminClose">&times;</span>
-
-<h2>상품 추가</h2>
-
-<input id="adminName" placeholder="상품 이름">
-<input id="adminPrice" type="number" placeholder="가격">
-<input id="adminImage" placeholder="이미지 URL">
-
-<button id="adminUpload">상품 등록</button>
-
+  <div class="modal-backdrop" onclick="closeModal('adminModal')"></div>
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('adminModal')">✕</button>
+    <div class="modal-body">
+      <h2>📦 상품 추가</h2>
+      <input id="adminName" placeholder="상품 이름" class="modal-input">
+      <input id="adminPrice" type="number" placeholder="가격 (₩ / 0=무료)" class="modal-input">
+      <input id="adminImage" placeholder="이미지 URL" class="modal-input">
+      <input id="adminDesc" placeholder="상품 설명" class="modal-input">
+      <select id="adminCategory" class="modal-input modal-select">
+        <option value="">카테고리 선택</option>
+        <option value="script">스크립트</option>
+        <option value="plugin">플러그인</option>
+        <option value="map">맵</option>
+        <option value="ui">UI</option>
+      </select>
+      <button id="adminUpload" class="btn-buy">✅ 상품 등록</button>
+    </div>
+  </div>
 </div>
 
-</div>
-
-
-
+<!-- ADMIN PANEL MODAL (orders) -->
 <div id="adminPanel" class="modal">
-
-<div class="modal-content">
-
-<span id="adminPanelClose">&times;</span>
-
-<h2>구매 요청 목록</h2>
-
-<div id="orderList"></div>
-
+  <div class="modal-backdrop" onclick="closeModal('adminPanel')"></div>
+  <div class="modal-content admin-wide">
+    <button class="modal-close" onclick="closeModal('adminPanel')">✕</button>
+    <div class="modal-body">
+      <h2>📋 구매 요청 목록</h2>
+      <div id="orderList" class="order-list"></div>
+      <div class="admin-actions">
+        <button id="openAddProduct" class="btn-admin-action">+ 상품 추가</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-</div>
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
 
 <script type="module" src="script.js"></script>
-
 </body>
 </html>
-
-
-
