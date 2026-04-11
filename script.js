@@ -49,6 +49,34 @@ function requireAdminAction() {
   return true;
 }
 
+/** 같은 구글 계정(uid)으로 다시 로그인해도 닉네임 유지 (이 브라우저 localStorage) */
+const PROFILE_LS = "rsstore_nick_profiles_v1";
+
+function loadAllProfiles() {
+  try { return JSON.parse(localStorage.getItem(PROFILE_LS) || "{}"); } catch { return {}; }
+}
+
+function getSavedNickname(uid) {
+  if (!uid) return "";
+  const nick = loadAllProfiles()[uid]?.nickname;
+  return typeof nick === "string" ? nick.trim() : "";
+}
+
+function saveNickname(uid, nickname) {
+  const all = loadAllProfiles();
+  all[uid] = { nickname: nickname.trim(), updatedAt: new Date().toISOString() };
+  localStorage.setItem(PROFILE_LS, JSON.stringify(all));
+}
+
+function getShownName(user) {
+  if (!user) return "";
+  const s = getSavedNickname(user.uid);
+  if (s.length >= 2) return s;
+  return user.displayName || (user.email ? user.email.split("@")[0] : "") || "회원";
+}
+
+let nickModalMandatory = false;
+
 let productsData = [];
 let newsData = [];
 let currentUser = null;
@@ -76,11 +104,53 @@ const top4Grid = document.getElementById("top4Grid");
 const gridTitle = document.getElementById("gridTitle");
 const gridCount = document.getElementById("gridCount");
 const emptyState = document.getElementById("emptyState");
+const navRight = document.getElementById("navRight");
 
 function setAdminButtonVisible(visible) {
   if (!adminPanelBtn) return;
-  adminPanelBtn.style.display = visible ? "inline-flex" : "none";
   adminPanelBtn.setAttribute("aria-hidden", visible ? "false" : "true");
+}
+
+function applyUserProfileToNavbar(user) {
+  if (!user || !userNameEl) return;
+  if (userAvatar) {
+    userAvatar.src = user.photoURL || "https://placehold.co/64x64/1e2235/00d4ff?text=U";
+    userAvatar.onerror = () => { userAvatar.src = "https://placehold.co/64x64/1e2235/00d4ff?text=U"; };
+  }
+  userNameEl.textContent = getShownName(user);
+  const badge = document.getElementById("userRoleBadge");
+  if (badge) {
+    if (userIsAdmin(user)) {
+      badge.textContent = "관리자";
+      badge.className = "user-role-badge role-admin";
+    } else {
+      badge.textContent = "회원";
+      badge.className = "user-role-badge role-member";
+    }
+    badge.style.display = "inline-block";
+  }
+}
+
+function openNickModal(options = {}) {
+  nickModalMandatory = !!options.mandatory;
+  const input = document.getElementById("nickInput");
+  if (currentUser) {
+    const saved = getSavedNickname(currentUser.uid);
+    input.value = saved || currentUser.displayName || "";
+  }
+  const hint = document.getElementById("nickModalHint");
+  hint.textContent = "";
+  hint.className = "upload-status";
+  openModal("nickModal");
+  const backdrop = document.getElementById("nickModalBackdrop");
+  backdrop.onclick = () => {
+    if (nickModalMandatory) {
+      hint.textContent = "닉네임을 저장해야 계속할 수 있어요.";
+      hint.className = "upload-status error";
+      return;
+    }
+    closeModal("nickModal");
+  };
 }
 
 function showPage(name) {
@@ -103,6 +173,7 @@ document.querySelectorAll(".nav-link").forEach(link => {
 
 const provider = new firebase.auth.GoogleAuthProvider();
 if (loginBtn) {
+  loginBtn.textContent = "로그인";
   loginBtn.addEventListener("click", () => {
     auth.signInWithPopup(provider).catch(e => showToast("로그인 실패: " + e.message, "error"));
   });
@@ -113,32 +184,86 @@ if (logoutBtn) {
   });
 }
 
+document.getElementById("nickSaveBtn").addEventListener("click", () => {
+  const raw = document.getElementById("nickInput").value.trim();
+  const hint = document.getElementById("nickModalHint");
+  if (raw.length < 2) {
+    hint.textContent = "닉네임은 2자 이상 입력해 주세요.";
+    hint.className = "upload-status error";
+    return;
+  }
+  if (currentUser) {
+    saveNickname(currentUser.uid, raw);
+    applyUserProfileToNavbar(currentUser);
+    nickModalMandatory = false;
+    closeModal("nickModal");
+    showToast("닉네임이 저장됐어요!", "success");
+  }
+});
+
+document.getElementById("editNickBtn").addEventListener("click", () => {
+  if (!currentUser) return;
+  openNickModal({ mandatory: false });
+});
+
+if (navRight) navRight.classList.add("auth-guest");
+
 auth.onAuthStateChanged(user => {
   currentUser = user;
   if (user) {
     isAdmin = userIsAdmin(user);
-    if (loginBtn) loginBtn.style.display = "none";
-    if (userMenu) userMenu.style.display = "flex";
-    if (userAvatar) {
-      userAvatar.src = user.photoURL || "https://placehold.co/64x64/1e2235/00d4ff?text=U";
-      userAvatar.onerror = () => { userAvatar.src = "https://placehold.co/64x64/1e2235/00d4ff?text=U"; };
+    if (navRight) {
+      navRight.classList.remove("auth-guest");
+      navRight.classList.add("auth-user");
+      navRight.classList.toggle("nav-admin", isAdmin);
     }
-    if (userNameEl) userNameEl.textContent = user.displayName || user.email.split("@")[0];
+    if (loginBtn) loginBtn.textContent = "로그인";
+    applyUserProfileToNavbar(user);
     setAdminButtonVisible(isAdmin);
+
+    const hasNick = getSavedNickname(user.uid).length >= 2;
+    if (!hasNick) {
+      queueMicrotask(() => openNickModal({ mandatory: true }));
+    }
+    if (isAdmin) loadProducts();
   } else {
     isAdmin = false;
-    if (loginBtn) loginBtn.style.display = "inline-block";
-    if (userMenu) userMenu.style.display = "none";
+    if (navRight) {
+      navRight.classList.remove("auth-user", "nav-admin");
+      navRight.classList.add("auth-guest");
+    }
+    nickModalMandatory = false;
+    closeModal("nickModal");
     setAdminButtonVisible(false);
   }
   renderProducts(filterProducts());
+  const newsPage = document.getElementById("page-news");
+  if (newsPage && newsPage.classList.contains("active")) renderNewsPage();
 });
+
+function isSimpleAssetProduct(p) {
+  const n = (p.name || "").toLowerCase().replace(/\s+/g, "");
+  return n.includes("심플에셋") || (n.includes("심플") && n.includes("에셋"));
+}
 
 async function loadProducts() {
   try {
-    const snap = await db.collection("products").get();
+    let snap = await db.collection("products").get();
     productsData = [];
     snap.forEach(doc => productsData.push({ id: doc.id, ...doc.data() }));
+
+    if (currentUser && userIsAdmin(currentUser)) {
+      const toRemove = productsData.filter(isSimpleAssetProduct);
+      for (const p of toRemove) {
+        await db.collection("products").doc(p.id).delete().catch(() => {});
+      }
+      if (toRemove.length) {
+        snap = await db.collection("products").get();
+        productsData = [];
+        snap.forEach(doc => productsData.push({ id: doc.id, ...doc.data() }));
+      }
+    }
+
     renderTop4();
     renderProducts(filterProducts());
   } catch (e) {
@@ -228,12 +353,12 @@ function makeProductCard(item, showDelete) {
         </div>
       </div>
     </div>
-    ${showDelete && isAdmin ? '<button type="button" class="deleteBtn" title="삭제">🗑</button>' : ""}
+    ${showDelete && currentUser && userIsAdmin(currentUser) ? '<button type="button" class="deleteBtn" title="삭제">🗑</button>' : ""}
   `;
 
   card.querySelector(".btn-buy-card").addEventListener("click", e => { e.stopPropagation(); openPurchaseModal(item); });
   card.addEventListener("click", () => openDetail(item));
-  if (showDelete && isAdmin) {
+  if (showDelete && currentUser && userIsAdmin(currentUser)) {
     card.querySelector(".deleteBtn").addEventListener("click", e => { e.stopPropagation(); deleteProduct(item.id); });
   }
   return card;
@@ -271,6 +396,8 @@ async function renderNewsPage() {
   count.textContent = `총 ${newsData.length}개의 뉴스`;
   empty.style.display = newsData.length === 0 ? "block" : "none";
 
+  const canDeleteNews = currentUser && userIsAdmin(currentUser);
+
   newsData.forEach(item => {
     const el = document.createElement("div");
     el.className = "news-card";
@@ -282,10 +409,10 @@ async function renderNewsPage() {
         <div class="news-card-title">${item.title}</div>
         <div class="news-card-body-text">${item.body || ""}</div>
       </div>
-      ${isAdmin ? `<div class="news-card-footer"><button type="button" class="news-delete-btn" data-id="${item.id}">🗑 삭제</button></div>` : ""}
+      ${canDeleteNews ? `<div class="news-card-footer"><button type="button" class="news-delete-btn">🗑 삭제</button></div>` : ""}
     `;
     el.addEventListener("click", () => openNewsModal(item));
-    if (isAdmin) {
+    if (canDeleteNews) {
       const del = el.querySelector(".news-delete-btn");
       if (del) del.addEventListener("click", e => { e.stopPropagation(); deleteNews(item.id); });
     }
@@ -359,7 +486,7 @@ document.getElementById("modalBuy").addEventListener("click", async () => {
       productName: btn.dataset.name,
       price: Number(btn.dataset.price),
       buyerEmail: currentUser.email,
-      buyerName: currentUser.displayName || currentUser.email,
+      buyerName: getShownName(currentUser),
       discord: discord || "",
       phone: phone || "",
       status: "pending",
@@ -505,6 +632,7 @@ async function loadManageProducts() {
 }
 
 async function deleteProduct(id) {
+  if (!requireAdminAction()) return;
   if (!confirm("정말 이 상품을 삭제할까요?")) return;
   try {
     await db.collection("products").doc(id).delete();
@@ -668,6 +796,7 @@ document.getElementById("newsUpload").addEventListener("click", async () => {
 });
 
 async function deleteNews(id) {
+  if (!requireAdminAction()) return;
   if (!confirm("정말 이 뉴스를 삭제할까요?")) return;
   try {
     await db.collection("news").doc(id).delete();
@@ -716,6 +845,9 @@ window.closeModal = closeModal;
 
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
+    if (document.getElementById("nickModal")?.classList.contains("active") && nickModalMandatory) {
+      return;
+    }
     document.querySelectorAll(".modal.active").forEach(m => m.classList.remove("active"));
     closeDetail();
   }
