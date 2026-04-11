@@ -28,10 +28,21 @@ const storage = getStorage(app);
 
 /* ===================================================
    ★ 관리자 이메일 — 여기에 본인 Gmail 주소 입력 ★
+   (대소문자·앞뒤 공백은 자동으로 무시해요)
 =================================================== */
 const ADMIN_EMAILS = [
   "sumin150130@gmail.com"
 ];
+
+const ADMIN_EMAILS_NORMALIZED = ADMIN_EMAILS
+  .map(e => String(e).toLowerCase().trim())
+  .filter(Boolean);
+
+function userIsAdmin(user) {
+  const email = user?.email;
+  if (!email) return false;
+  return ADMIN_EMAILS_NORMALIZED.includes(email.toLowerCase().trim());
+}
 
 /* ===================================================
    상태
@@ -43,8 +54,8 @@ let isAdmin      = false;
 let currentFilter      = "all";
 let currentDetailItem  = null;
 let orderStatusFilter  = "all";
-let newsImageDataURL   = null;   // 뉴스 이미지 (base64 or blob URL)
-let newsImageFile      = null;   // 실제 File 객체
+let newsImageDataURL   = null;
+let newsImageFile      = null;
 
 /* ===================================================
    카테고리 레이블
@@ -70,6 +81,12 @@ const gridTitle     = document.getElementById("gridTitle");
 const gridCount     = document.getElementById("gridCount");
 const emptyState    = document.getElementById("emptyState");
 
+function setAdminButtonVisible(visible) {
+  if (!adminPanelBtn) return;
+  adminPanelBtn.style.display = visible ? "inline-flex" : "none";
+  adminPanelBtn.setAttribute("aria-hidden", visible ? "false" : "true");
+}
+
 /* ===================================================
    페이지 전환
 =================================================== */
@@ -94,24 +111,28 @@ document.querySelectorAll(".nav-link").forEach(link => {
    AUTH
 =================================================== */
 const provider = new GoogleAuthProvider();
-loginBtn.onclick = () =>
-  signInWithPopup(auth, provider).catch(e => showToast("로그인 실패: " + e.message, "error"));
-logoutBtn.onclick = () => signOut(auth).then(() => showToast("로그아웃 됐어요!"));
+if (loginBtn) {
+  loginBtn.onclick = () =>
+    signInWithPopup(auth, provider).catch(e => showToast("로그인 실패: " + e.message, "error"));
+}
+if (logoutBtn) {
+  logoutBtn.onclick = () => signOut(auth).then(() => showToast("로그아웃 됐어요!"));
+}
 
 onAuthStateChanged(auth, user => {
   currentUser = user;
   if (user) {
-    isAdmin = ADMIN_EMAILS.includes(user.email);
-    loginBtn.style.display = "none";
-    userMenu.style.display = "flex";
-    if (user.photoURL) userAvatar.src = user.photoURL;
-    userNameEl.textContent = user.displayName || user.email.split("@")[0];
-    adminPanelBtn.style.display = isAdmin ? "inline-flex" : "none";
+    isAdmin = userIsAdmin(user);
+    if (loginBtn) loginBtn.style.display = "none";
+    if (userMenu) userMenu.style.display = "flex";
+    if (userAvatar && user.photoURL) userAvatar.src = user.photoURL;
+    if (userNameEl) userNameEl.textContent = user.displayName || user.email.split("@")[0];
+    setAdminButtonVisible(isAdmin);
   } else {
     isAdmin = false;
-    loginBtn.style.display = "inline-block";
-    userMenu.style.display = "none";
-    adminPanelBtn.style.display = "none";
+    if (loginBtn) loginBtn.style.display = "inline-block";
+    if (userMenu) userMenu.style.display = "none";
+    setAdminButtonVisible(false);
   }
   renderProducts(filterProducts());
 });
@@ -290,11 +311,12 @@ async function renderNewsPage() {
         <div class="news-card-title">${item.title}</div>
         <div class="news-card-body-text">${item.body || ''}</div>
       </div>
-      ${isAdmin ? `<div class="news-card-footer"><button class="news-delete-btn" data-id="${item.id}">🗑 삭제</button></div>` : ''}
+      ${isAdmin ? `<div class="news-card-footer"><button type="button" class="news-delete-btn" data-id="${item.id}">🗑 삭제</button></div>` : ''}
     `;
     el.onclick = () => openNewsModal(item);
     if (isAdmin) {
-      el.querySelector(".news-delete-btn").onclick = e => { e.stopPropagation(); deleteNews(item.id); };
+      const del = el.querySelector(".news-delete-btn");
+      if (del) del.onclick = e => { e.stopPropagation(); deleteNews(item.id); };
     }
     grid.appendChild(el);
   });
@@ -393,10 +415,12 @@ document.getElementById("modalBuy").onclick = async () => {
 /* ===================================================
    관리자 패널
 =================================================== */
-adminPanelBtn.onclick = () => {
-  openModal("adminPanel");
-  switchAdminTab("addProduct");
-};
+if (adminPanelBtn) {
+  adminPanelBtn.onclick = () => {
+    openModal("adminPanel");
+    switchAdminTab("addProduct");
+  };
+}
 
 document.querySelectorAll(".admin-tab").forEach(tab => {
   tab.onclick = () => {
@@ -435,7 +459,6 @@ document.getElementById("adminUpload").onclick = async () => {
   const image = document.getElementById("adminImage").value.trim();
   const desc  = document.getElementById("adminDesc").value.trim();
 
-  // 체크박스로 카테고리 수집
   const checkedCats = [...document.querySelectorAll(".cat-checkbox-group input:checked")].map(cb => cb.value);
 
   const status = document.getElementById("uploadStatus");
@@ -448,7 +471,6 @@ document.getElementById("adminUpload").onclick = async () => {
   setStatus(status, "등록 중…", "loading");
 
   try {
-    // 가격이 0이거나 "free" 카테고리 선택 시 자동으로 free 추가
     const isFree = price === 0 || checkedCats.includes("free");
     if (isFree && !checkedCats.includes("free")) checkedCats.push("free");
 
@@ -458,7 +480,7 @@ document.getElementById("adminUpload").onclick = async () => {
       image: image || "",
       description: desc,
       categories:  checkedCats,
-      category:    checkedCats[0], // 하위 호환용
+      category:    checkedCats[0],
       sales:    0,
       createdAt: new Date().toISOString()
     });
@@ -466,7 +488,6 @@ document.getElementById("adminUpload").onclick = async () => {
     setStatus(status, "✅ 상품이 등록됐어요!", "success");
     showToast("✅ 상품 등록 완료!", "success");
 
-    // 폼 초기화
     document.getElementById("adminName").value = "";
     document.getElementById("adminPrice").value = "";
     document.getElementById("adminImage").value = "";
@@ -513,7 +534,7 @@ async function loadManageProducts() {
         </div>
       </div>
       <div class="manage-item-actions">
-        <button class="btn-item-delete">🗑 삭제</button>
+        <button type="button" class="btn-item-delete">🗑 삭제</button>
       </div>
     `;
     el.querySelector(".btn-item-delete").onclick = async () => {
@@ -577,7 +598,7 @@ async function loadOrders() {
           💰 ${order.price===0?'FREE':'₩ '+Number(order.price).toLocaleString()} &nbsp;|&nbsp;
           📅 ${date}
         </div>
-        ${order.status!=='done' ? `<button class="btn-done" data-id="${order.id}">✅ 완료 처리</button>` : ''}
+        ${order.status!=='done' ? `<button type="button" class="btn-done" data-id="${order.id}">✅ 완료 처리</button>` : ''}
       `;
       if (order.status !== 'done') {
         el.querySelector(".btn-done").onclick = async (e) => {
@@ -611,10 +632,8 @@ document.querySelectorAll(".order-filter-btn").forEach(btn => {
 const newsFileInput = document.getElementById("newsImageFile");
 const newsFileArea  = document.getElementById("newsFileArea");
 
-// 파일 선택
 newsFileInput.onchange = (e) => handleNewsFile(e.target.files[0]);
 
-// 드래그 앤 드롭
 newsFileArea.ondragover  = (e) => { e.preventDefault(); newsFileArea.style.borderColor="var(--accent)"; };
 newsFileArea.ondragleave = ()  => { newsFileArea.style.borderColor=""; };
 newsFileArea.ondrop = (e) => {
@@ -660,7 +679,6 @@ document.getElementById("newsUpload").onclick = async () => {
   try {
     let imageURL = "";
 
-    // 이미지가 있으면 Firebase Storage에 업로드
     if (newsImageFile) {
       setStatus(status, "이미지 업로드 중…", "loading");
       const storageRef = ref(storage, `news/${Date.now()}_${newsImageFile.name}`);
@@ -676,7 +694,6 @@ document.getElementById("newsUpload").onclick = async () => {
     setStatus(status, "✅ 뉴스가 등록됐어요!", "success");
     showToast("📰 뉴스 등록 완료!", "success");
 
-    // 폼 초기화
     document.getElementById("newsTitle").value = "";
     document.getElementById("newsBody").value  = "";
     document.getElementById("removeNewsImg").click();
