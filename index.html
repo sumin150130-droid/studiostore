@@ -28,7 +28,7 @@
     <input id="searchInput" placeholder="에셋, 플러그인, 스크립트를 검색하세요…">
   </div>
   <div class="nav-right">
-    <button id="loginBtn" class="btn-login">로그인</button>
+    <button type="button" id="loginBtn" class="btn-login">닉네임 설정</button>
     <div id="userMenu" style="display:none;" class="user-menu">
       <img id="userAvatar" src="" class="avatar" alt="avatar">
       <span id="userName" class="user-name"></span>
@@ -257,10 +257,10 @@
 
     <!-- 탭 버튼 -->
     <div class="admin-tabs">
-      <button class="admin-tab active" data-tab="addProduct">📦 상품 추가</button>
-      <button class="admin-tab" data-tab="manageProduct">🗂 상품 관리</button>
-      <button class="admin-tab" data-tab="orderList">📋 구매 목록</button>
-      <button class="admin-tab" data-tab="addNews">📰 뉴스 추가</button>
+      <button type="button" class="admin-tab active" data-tab="addProduct">📦 상품 추가</button>
+      <button type="button" class="admin-tab" data-tab="manageProduct">🗂 상품 관리</button>
+      <button type="button" class="admin-tab" data-tab="orderList">📋 구매 목록</button>
+      <button type="button" class="admin-tab" data-tab="addNews">📰 뉴스 추가</button>
     </div>
 
     <!-- 상품 추가 탭 -->
@@ -297,7 +297,7 @@
             <img id="previewImg" src="" alt="미리보기">
           </div>
         </div>
-        <button id="adminUpload" class="btn-buy" style="margin-top:8px;">✅ 상품 등록하기</button>
+        <button type="button" id="adminUpload" class="btn-buy" style="margin-top:8px;">✅ 상품 등록하기</button>
         <div id="uploadStatus" class="upload-status"></div>
       </div>
     </div>
@@ -347,7 +347,7 @@
             </div>
           </div>
         </div>
-        <button id="newsUpload" class="btn-buy" style="margin-top:8px;">📰 뉴스 등록하기</button>
+        <button type="button" id="newsUpload" class="btn-buy" style="margin-top:8px;">📰 뉴스 등록하기</button>
         <div id="newsUploadStatus" class="upload-status"></div>
       </div>
     </div>
@@ -358,6 +358,6 @@
 <!-- ===== TOAST ===== -->
 <div id="toast" class="toast"></div>
 
-<script type="module" src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
