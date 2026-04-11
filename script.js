@@ -1,90 +1,168 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import {
-  getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import {
-  getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, increment
-} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
-import {
-  getStorage, ref, uploadBytes, getDownloadURL
-} from "https://www.gstatic.com/firebasejs/12.10.0/firebase-storage.js";
+/**
+ * RSStore — 로컬 전용 (Firebase 없음)
+ * 데이터는 브라우저 localStorage 에 저장됩니다.
+ */
 
-/* ===================================================
-   FIREBASE 설정
-=================================================== */
-const firebaseConfig = {
-  apiKey: "AIzaSyBkmrbF-V9gNQiFhEjynULsYjpr5EQWErA",
-  authDomain: "studiostore-4bf29.firebaseapp.com",
-  projectId: "studiostore-4bf29",
-  storageBucket: "studiostore-4bf29.firebasestorage.app",
-  messagingSenderId: "693847220052",
-  appId: "1:693847220052:web:f2a863bd3bbef1087932c1"
-};
+const LS_PRODUCTS = "rsstore_products";
+const LS_NEWS = "rsstore_news";
+const LS_ORDERS = "rsstore_orders";
+const LS_USER = "rsstore_user";
 
-const app  = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db   = getFirestore(app);
-const storage = getStorage(app);
+function newId() {
+  return crypto.randomUUID ? crypto.randomUUID() : "id-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+}
 
-/* ===================================================
-   ★ 관리자 이메일 — 여기에 본인 Gmail 주소 입력 ★
-   (대소문자·앞뒤 공백은 자동으로 무시해요)
-=================================================== */
-const ADMIN_EMAILS = [
-  "sumin150130@gmail.com"
-];
+function escapeHtml(s) {
+  if (s == null || s === "") return "";
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
 
-const ADMIN_EMAILS_NORMALIZED = ADMIN_EMAILS
-  .map(e => String(e).toLowerCase().trim())
-  .filter(Boolean);
+function loadJson(key, fallback) {
+  try {
+    const t = localStorage.getItem(key);
+    if (!t) return fallback;
+    const v = JSON.parse(t);
+    return Array.isArray(v) ? v : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
-function userIsAdmin(user) {
-  const email = user?.email;
-  if (!email) return false;
-  return ADMIN_EMAILS_NORMALIZED.includes(email.toLowerCase().trim());
+function saveJson(key, arr) {
+  localStorage.setItem(key, JSON.stringify(arr));
 }
 
 /* ===================================================
    상태
 =================================================== */
 let productsData = [];
-let newsData     = [];
-let currentUser  = null;
-let isAdmin      = false;
-let currentFilter      = "all";
-let currentDetailItem  = null;
-let orderStatusFilter  = "all";
-let newsImageDataURL   = null;
-let newsImageFile      = null;
+let newsData = [];
+let ordersData = [];
+let currentUser = { email: "guest@local", displayName: "손님", avatar: "" };
+const isAdmin = true;
 
-/* ===================================================
-   카테고리 레이블
-=================================================== */
+let currentFilter = "all";
+let currentDetailItem = null;
+let orderStatusFilter = "all";
+let newsImageDataURL = null;
+let newsImageFile = null;
+
 const CAT_LABELS = {
-  script:"스크립트", plugin:"플러그인",
-  map:"맵", ui:"UI", free:"무료"
+  script: "스크립트", plugin: "플러그인",
+  map: "맵", ui: "UI", free: "무료"
 };
 
 /* ===================================================
    DOM
 =================================================== */
-const loginBtn      = document.getElementById("loginBtn");
-const logoutBtn     = document.getElementById("logoutBtn");
-const userMenu      = document.getElementById("userMenu");
-const userAvatar    = document.getElementById("userAvatar");
-const userNameEl    = document.getElementById("userName");
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const userMenu = document.getElementById("userMenu");
+const userAvatar = document.getElementById("userAvatar");
+const userNameEl = document.getElementById("userName");
 const adminPanelBtn = document.getElementById("adminPanelBtn");
-const searchInput   = document.getElementById("searchInput");
-const productGrid   = document.getElementById("productGrid");
-const top4Grid      = document.getElementById("top4Grid");
-const gridTitle     = document.getElementById("gridTitle");
-const gridCount     = document.getElementById("gridCount");
-const emptyState    = document.getElementById("emptyState");
+const searchInput = document.getElementById("searchInput");
+const productGrid = document.getElementById("productGrid");
+const top4Grid = document.getElementById("top4Grid");
+const gridTitle = document.getElementById("gridTitle");
+const gridCount = document.getElementById("gridCount");
+const emptyState = document.getElementById("emptyState");
 
 function setAdminButtonVisible(visible) {
   if (!adminPanelBtn) return;
   adminPanelBtn.style.display = visible ? "inline-flex" : "none";
-  adminPanelBtn.setAttribute("aria-hidden", visible ? "false" : "true");
+}
+
+function applyUserUI() {
+  if (loginBtn) {
+    loginBtn.style.display = "inline-block";
+    loginBtn.textContent = "닉네임 변경";
+  }
+  if (userMenu) userMenu.style.display = "flex";
+  if (userAvatar) {
+    userAvatar.src = currentUser.avatar || "https://placehold.co/64x64/1e2235/00d4ff?text=U";
+    userAvatar.onerror = () => { userAvatar.src = "https://placehold.co/64x64/1e2235/00d4ff?text=U"; };
+  }
+  if (userNameEl) userNameEl.textContent = currentUser.displayName || "손님";
+  setAdminButtonVisible(isAdmin);
+}
+
+function seedIfEmpty() {
+  if (!loadJson(LS_PRODUCTS, []).length) {
+    const demo = [{
+      id: newId(),
+      name: "샘플 에셋 (삭제하고 등록해 보세요)",
+      price: 0,
+      image: "https://placehold.co/400x225/1e2235/00d4ff?text=RSStore",
+      description: "이 브라우저에만 저장되는 로컬 스토어입니다. Firebase 설정이 필요 없어요.",
+      categories: ["free", "script"],
+      category: "script",
+      sales: 0,
+      createdAt: new Date().toISOString()
+    }];
+    saveJson(LS_PRODUCTS, demo);
+  }
+}
+
+/* ===================================================
+   불러오기 / 저장
+=================================================== */
+function loadProducts() {
+  seedIfEmpty();
+  productsData = loadJson(LS_PRODUCTS, []);
+  renderTop4();
+  renderProducts(filterProducts());
+}
+
+function loadNews() {
+  newsData = loadJson(LS_NEWS, []);
+  newsData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+function saveProducts() {
+  saveJson(LS_PRODUCTS, productsData);
+}
+
+function saveNews() {
+  saveJson(LS_NEWS, newsData);
+}
+
+function saveOrders() {
+  saveJson(LS_ORDERS, ordersData);
+}
+
+/* ===================================================
+   로그인 (닉네임만, 선택)
+=================================================== */
+function loadSavedUser() {
+  const u = loadJson(LS_USER, null);
+  if (u && u.displayName) currentUser = { ...currentUser, ...u };
+}
+
+function saveUser() {
+  saveJson(LS_USER, { displayName: currentUser.displayName, email: currentUser.email, avatar: currentUser.avatar || "" });
+}
+
+if (loginBtn) {
+  loginBtn.onclick = () => {
+    const name = prompt("표시할 닉네임을 입력하세요 (비우면 손님)", currentUser.displayName || "");
+    if (name === null) return;
+    currentUser.displayName = name.trim() || "손님";
+    currentUser.email = (name.trim() || "guest") + "@local";
+    saveUser();
+    applyUserUI();
+    showToast("저장됐어요. 이 브라우저에만 기억해요.", "success");
+  };
+}
+if (logoutBtn) {
+  logoutBtn.onclick = () => {
+    currentUser = { email: "guest@local", displayName: "손님", avatar: "" };
+    localStorage.removeItem(LS_USER);
+    applyUserUI();
+    showToast("초기화했어요.", "success");
+  };
 }
 
 /* ===================================================
@@ -97,7 +175,7 @@ function showPage(name) {
     l.classList.toggle("active", l.dataset.page === name);
   });
   if (name === "assets") renderAssetsPage();
-  if (name === "news")   renderNewsPage();
+  if (name === "news") renderNewsPage();
 }
 
 document.querySelectorAll(".nav-link").forEach(link => {
@@ -108,85 +186,28 @@ document.querySelectorAll(".nav-link").forEach(link => {
 });
 
 /* ===================================================
-   AUTH
-=================================================== */
-const provider = new GoogleAuthProvider();
-if (loginBtn) {
-  loginBtn.onclick = () =>
-    signInWithPopup(auth, provider).catch(e => showToast("로그인 실패: " + e.message, "error"));
-}
-if (logoutBtn) {
-  logoutBtn.onclick = () => signOut(auth).then(() => showToast("로그아웃 됐어요!"));
-}
-
-onAuthStateChanged(auth, user => {
-  currentUser = user;
-  if (user) {
-    isAdmin = userIsAdmin(user);
-    if (loginBtn) loginBtn.style.display = "none";
-    if (userMenu) userMenu.style.display = "flex";
-    if (userAvatar && user.photoURL) userAvatar.src = user.photoURL;
-    if (userNameEl) userNameEl.textContent = user.displayName || user.email.split("@")[0];
-    setAdminButtonVisible(isAdmin);
-  } else {
-    isAdmin = false;
-    if (loginBtn) loginBtn.style.display = "inline-block";
-    if (userMenu) userMenu.style.display = "none";
-    setAdminButtonVisible(false);
-  }
-  renderProducts(filterProducts());
-});
-
-/* ===================================================
-   상품 불러오기
-=================================================== */
-async function loadProducts() {
-  try {
-    const snap = await getDocs(collection(db, "products"));
-    productsData = [];
-    snap.forEach(d => productsData.push({ id: d.id, ...d.data() }));
-    renderTop4();
-    renderProducts(filterProducts());
-  } catch (e) {
-    showToast("상품 로드 실패: " + e.message, "error");
-  }
-}
-
-/* ===================================================
-   뉴스 불러오기
-=================================================== */
-async function loadNews() {
-  try {
-    const snap = await getDocs(collection(db, "news"));
-    newsData = [];
-    snap.forEach(d => newsData.push({ id: d.id, ...d.data() }));
-    newsData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  } catch (e) {
-    console.error("뉴스 로드 오류:", e);
-  }
-}
-
-/* ===================================================
    필터
 =================================================== */
 function filterProducts() {
   let data = [...productsData];
   const kw = searchInput.value.toLowerCase();
-  if (kw) data = data.filter(p =>
-    p.name?.toLowerCase().includes(kw) ||
-    p.description?.toLowerCase().includes(kw)
-  );
+  if (kw) {
+    data = data.filter(p =>
+      p.name?.toLowerCase().includes(kw) ||
+      p.description?.toLowerCase().includes(kw)
+    );
+  }
 
   switch (currentFilter) {
-    case "popular":  data.sort((a,b)=>(b.sales||0)-(a.sales||0)); gridTitle.textContent="🔥 인기 에셋"; break;
-    case "free":     data=data.filter(p=>!p.price||p.price===0||p.categories?.includes("free")); gridTitle.textContent="🎁 무료 에셋"; break;
-    case "lowprice": data.sort((a,b)=>(a.price||0)-(b.price||0)); gridTitle.textContent="↓ 낮은 가격순"; break;
-    case "highprice":data.sort((a,b)=>(b.price||0)-(a.price||0)); gridTitle.textContent="↑ 높은 가격순"; break;
-    case "script":   data=data.filter(p=>p.categories?.includes("script")||p.category==="script"); gridTitle.textContent="📜 스크립트"; break;
-    case "plugin":   data=data.filter(p=>p.categories?.includes("plugin")||p.category==="plugin"); gridTitle.textContent="🔧 플러그인"; break;
-    case "map":      data=data.filter(p=>p.categories?.includes("map")||p.category==="map"); gridTitle.textContent="🗺 맵"; break;
-    case "ui":       data=data.filter(p=>p.categories?.includes("ui")||p.category==="ui"); gridTitle.textContent="🖼 UI"; break;
-    default:         gridTitle.textContent="전체 에셋";
+    case "popular": data.sort((a, b) => (b.sales || 0) - (a.sales || 0)); gridTitle.textContent = "🔥 인기 에셋"; break;
+    case "free": data = data.filter(p => !p.price || p.price === 0 || p.categories?.includes("free")); gridTitle.textContent = "🎁 무료 에셋"; break;
+    case "lowprice": data.sort((a, b) => (a.price || 0) - (b.price || 0)); gridTitle.textContent = "↓ 낮은 가격순"; break;
+    case "highprice": data.sort((a, b) => (b.price || 0) - (a.price || 0)); gridTitle.textContent = "↑ 높은 가격순"; break;
+    case "script": data = data.filter(p => p.categories?.includes("script") || p.category === "script"); gridTitle.textContent = "📜 스크립트"; break;
+    case "plugin": data = data.filter(p => p.categories?.includes("plugin") || p.category === "plugin"); gridTitle.textContent = "🔧 플러그인"; break;
+    case "map": data = data.filter(p => p.categories?.includes("map") || p.category === "map"); gridTitle.textContent = "🗺 맵"; break;
+    case "ui": data = data.filter(p => p.categories?.includes("ui") || p.category === "ui"); gridTitle.textContent = "🖼 UI"; break;
+    default: gridTitle.textContent = "전체 에셋";
   }
   return data;
 }
@@ -205,53 +226,47 @@ function renderProducts(data) {
   productGrid.innerHTML = "";
   gridCount.textContent = `총 ${data.length}개의 에셋`;
   emptyState.style.display = data.length === 0 ? "block" : "none";
-
-  data.forEach(item => {
-    const card = makeProductCard(item, true);
-    productGrid.appendChild(card);
-  });
+  data.forEach(item => productGrid.appendChild(makeProductCard(item, true)));
 }
 
-/* 에셋 페이지 */
 function renderAssetsPage() {
-  const grid  = document.getElementById("assetsGrid");
+  const grid = document.getElementById("assetsGrid");
   const empty = document.getElementById("assetsEmpty");
   const count = document.getElementById("assetsCount");
   grid.innerHTML = "";
   count.textContent = `총 ${productsData.length}개의 에셋`;
   empty.style.display = productsData.length === 0 ? "block" : "none";
-  productsData.forEach(item => {
-    const card = makeProductCard(item, false);
-    grid.appendChild(card);
-  });
+  productsData.forEach(item => grid.appendChild(makeProductCard(item, false)));
 }
 
-/* 카드 생성 공통 함수 */
 function makeProductCard(item, showDelete) {
   const isFree = !item.price || item.price === 0 || item.categories?.includes("free");
-  const cats   = item.categories || (item.category ? [item.category] : []);
+  const cats = item.categories || (item.category ? [item.category] : []);
   const catLabel = cats.map(c => CAT_LABELS[c] || c).join(", ") || "에셋";
+  const name = escapeHtml(item.name);
+  const desc = escapeHtml(item.description || "로블록스 스튜디오 에셋");
+  const img = escapeHtml(item.image || "https://placehold.co/400x225/1e2235/00d4ff?text=RSStore");
 
   const card = document.createElement("div");
   card.className = "card";
   card.innerHTML = `
     <div class="card-img-wrap">
-      <img src="${item.image || 'https://placehold.co/400x225/1e2235/00d4ff?text=RSStore'}" alt="${item.name}" loading="lazy">
-      <span class="card-category-tag">${catLabel}</span>
-      ${isFree ? '<span class="card-free-tag">FREE</span>' : ''}
+      <img src="${img}" alt="" loading="lazy">
+      <span class="card-category-tag">${escapeHtml(catLabel)}</span>
+      ${isFree ? '<span class="card-free-tag">FREE</span>' : ""}
     </div>
     <div class="card-body">
-      <div class="card-name">${item.name}</div>
-      <div class="card-desc">${item.description || '로블록스 스튜디오 에셋'}</div>
+      <div class="card-name">${name}</div>
+      <div class="card-desc">${desc}</div>
       <div class="card-footer">
-        <span class="card-price ${isFree?'free-price':''}">${isFree ? 'FREE' : '₩ '+Number(item.price).toLocaleString()}</span>
+        <span class="card-price ${isFree ? "free-price" : ""}">${isFree ? "FREE" : "₩ " + Number(item.price).toLocaleString()}</span>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span class="card-sales">${item.sales ? item.sales+' 판매' : ''}</span>
-          <button class="btn-buy-card">구매</button>
+          <span class="card-sales">${item.sales ? item.sales + " 판매" : ""}</span>
+          <button type="button" class="btn-buy-card">구매</button>
         </div>
       </div>
     </div>
-    ${(showDelete && isAdmin) ? '<button class="deleteBtn" title="삭제">🗑</button>' : ''}
+    ${showDelete && isAdmin ? '<button type="button" class="deleteBtn" title="삭제">🗑</button>' : ""}
   `;
 
   card.querySelector(".btn-buy-card").onclick = e => { e.stopPropagation(); openPurchaseModal(item); };
@@ -262,25 +277,23 @@ function makeProductCard(item, showDelete) {
   return card;
 }
 
-/* ===================================================
-   TOP 4
-=================================================== */
 function renderTop4() {
-  const top4 = [...productsData].sort((a,b)=>(b.sales||0)-(a.sales||0)).slice(0,4);
+  const top4 = [...productsData].sort((a, b) => (b.sales || 0) - (a.sales || 0)).slice(0, 4);
   top4Grid.innerHTML = "";
-  ["🥇","🥈","🥉","4"].forEach((medal, i) => {
+  ["🥇", "🥈", "🥉", "4"].forEach((medal, i) => {
     if (!top4[i]) return;
     const item = top4[i];
     const isFree = !item.price || item.price === 0 || item.categories?.includes("free");
     const el = document.createElement("div");
     el.className = "top4-card";
+    const img = escapeHtml(item.image || "https://placehold.co/52x52/1e2235/00d4ff?text=RS");
     el.innerHTML = `
-      <span class="top4-rank ${["rank-1","rank-2","rank-3",""][i]}">${medal}</span>
-      <img class="top4-img" src="${item.image||'https://placehold.co/52x52/1e2235/00d4ff?text=RS'}" alt="${item.name}">
+      <span class="top4-rank ${["rank-1", "rank-2", "rank-3", ""][i]}">${medal}</span>
+      <img class="top4-img" src="${img}" alt="">
       <div class="top4-info">
-        <div class="top4-name">${item.name}</div>
-        <div class="top4-price">${isFree?'FREE':'₩ '+Number(item.price).toLocaleString()}</div>
-        <div class="top4-sales">${item.sales ? item.sales+' 판매':'신규'}</div>
+        <div class="top4-name">${escapeHtml(item.name)}</div>
+        <div class="top4-price">${isFree ? "FREE" : "₩ " + Number(item.price).toLocaleString()}</div>
+        <div class="top4-sales">${item.sales ? item.sales + " 판매" : "신규"}</div>
       </div>
     `;
     el.onclick = () => openDetail(item);
@@ -289,11 +302,11 @@ function renderTop4() {
 }
 
 /* ===================================================
-   뉴스 페이지 렌더링
+   뉴스
 =================================================== */
-async function renderNewsPage() {
-  await loadNews();
-  const grid  = document.getElementById("newsGrid");
+function renderNewsPage() {
+  loadNews();
+  const grid = document.getElementById("newsGrid");
   const empty = document.getElementById("newsEmpty");
   const count = document.getElementById("newsCount");
   grid.innerHTML = "";
@@ -304,14 +317,17 @@ async function renderNewsPage() {
     const el = document.createElement("div");
     el.className = "news-card";
     const date = item.createdAt ? new Date(item.createdAt).toLocaleDateString("ko-KR") : "";
+    const imgBlock = item.imageURL
+      ? `<img class="news-card-img" src="${escapeHtml(item.imageURL)}" alt="">`
+      : "";
     el.innerHTML = `
-      ${item.imageURL ? `<img class="news-card-img" src="${item.imageURL}" alt="${item.title}">` : ''}
+      ${imgBlock}
       <div class="news-card-body">
-        <div class="news-card-date">${date}</div>
-        <div class="news-card-title">${item.title}</div>
-        <div class="news-card-body-text">${item.body || ''}</div>
+        <div class="news-card-date">${escapeHtml(date)}</div>
+        <div class="news-card-title">${escapeHtml(item.title)}</div>
+        <div class="news-card-body-text">${escapeHtml(item.body || "")}</div>
       </div>
-      ${isAdmin ? `<div class="news-card-footer"><button type="button" class="news-delete-btn" data-id="${item.id}">🗑 삭제</button></div>` : ''}
+      ${isAdmin ? `<div class="news-card-footer"><button type="button" class="news-delete-btn" data-id="${escapeHtml(item.id)}">🗑 삭제</button></div>` : ""}
     `;
     el.onclick = () => openNewsModal(item);
     if (isAdmin) {
@@ -322,22 +338,21 @@ async function renderNewsPage() {
   });
 }
 
-/* ===================================================
-   뉴스 상세 모달
-=================================================== */
 function openNewsModal(item) {
   const date = item.createdAt ? new Date(item.createdAt).toLocaleDateString("ko-KR") : "";
-  document.getElementById("newsModalDate").textContent  = date;
-  document.getElementById("newsModalTitle").textContent = item.title;
-  document.getElementById("newsModalBody").textContent  = item.body || "";
+  document.getElementById("newsModalDate").textContent = date;
+  document.getElementById("newsModalTitle").textContent = item.title || "";
+  document.getElementById("newsModalBody").textContent = item.body || "";
   const img = document.getElementById("newsModalImage");
-  if (item.imageURL) { img.src = item.imageURL; img.style.display = "block"; }
-  else img.style.display = "none";
+  if (item.imageURL) {
+    img.src = item.imageURL;
+    img.style.display = "block";
+  } else img.style.display = "none";
   openModal("newsModal");
 }
 
 /* ===================================================
-   상품 상세 슬라이드 패널
+   상세 패널
 =================================================== */
 function openDetail(item) {
   currentDetailItem = item;
@@ -345,9 +360,9 @@ function openDetail(item) {
   const cats = item.categories || (item.category ? [item.category] : []);
   const catLabel = cats.map(c => CAT_LABELS[c] || c).join(" · ") || "에셋";
 
-  document.getElementById("detailImage").src = item.image || 'https://placehold.co/440x248/1e2235/00d4ff?text=RSStore';
+  document.getElementById("detailImage").src = item.image || "https://placehold.co/440x248/1e2235/00d4ff?text=RSStore";
   document.getElementById("detailCatBadge").textContent = catLabel;
-  document.getElementById("detailName").textContent = item.name;
+  document.getElementById("detailName").textContent = item.name || "";
   document.getElementById("detailDesc").textContent = item.description || "로블록스 스튜디오 에셋입니다.";
   document.getElementById("detailPrice").textContent = isFree ? "FREE" : "₩ " + Number(item.price).toLocaleString();
   document.getElementById("detailPrice").style.color = isFree ? "var(--green)" : "var(--accent)";
@@ -361,55 +376,65 @@ window.closeDetail = () => {
   document.getElementById("detailPanel").classList.remove("active");
   document.getElementById("detailOverlay").classList.remove("active");
 };
+
 document.getElementById("detailBuyBtn").onclick = () => {
   if (currentDetailItem) openPurchaseModal(currentDetailItem);
 };
 
 /* ===================================================
-   구매 모달
+   구매
 =================================================== */
 function openPurchaseModal(item) {
   const isFree = !item.price || item.price === 0 || item.categories?.includes("free");
   document.getElementById("purchaseProductName").textContent = item.name;
   document.getElementById("purchasePrice").textContent = isFree ? "FREE" : "₩ " + Number(item.price).toLocaleString();
   document.getElementById("buyerDiscord").value = "";
-  document.getElementById("buyerPhone").value   = "";
-  document.getElementById("modalBuy").dataset.id    = item.id;
-  document.getElementById("modalBuy").dataset.name  = item.name;
+  document.getElementById("buyerPhone").value = "";
+  document.getElementById("modalBuy").dataset.id = item.id;
+  document.getElementById("modalBuy").dataset.name = item.name;
   document.getElementById("modalBuy").dataset.price = item.price || 0;
   openModal("purchaseModal");
 }
 
-document.getElementById("modalBuy").onclick = async () => {
-  if (!currentUser) { showToast("구매하려면 로그인이 필요해요!", "error"); return; }
+document.getElementById("modalBuy").onclick = () => {
   const discord = document.getElementById("buyerDiscord").value.trim();
-  const phone   = document.getElementById("buyerPhone").value.trim();
-  if (!discord && !phone) { showToast("디스코드 ID 또는 전화번호 중 하나는 필수예요!", "error"); return; }
+  const phone = document.getElementById("buyerPhone").value.trim();
+  if (!discord && !phone) {
+    showToast("디스코드 ID 또는 전화번호 중 하나는 입력해 주세요.", "error");
+    return;
+  }
 
   const btn = document.getElementById("modalBuy");
-  btn.textContent = "처리 중…"; btn.disabled = true;
+  btn.disabled = true;
+  btn.textContent = "처리 중…";
 
-  try {
-    await addDoc(collection(db, "orders"), {
-      productId:   btn.dataset.id,
-      productName: btn.dataset.name,
-      price:       Number(btn.dataset.price),
-      buyerEmail:  currentUser.email,
-      buyerName:   currentUser.displayName || currentUser.email,
-      discord:     discord || "",
-      phone:       phone   || "",
-      status:      "pending",
-      createdAt:   new Date().toISOString()
-    });
-    await updateDoc(doc(db, "products", btn.dataset.id), { sales: increment(1) });
-    showToast("✅ 구매 요청 완료! 곧 연락드릴게요.", "success");
-    closeModal("purchaseModal");
-    loadProducts();
-  } catch (e) {
-    showToast("구매 요청 실패: " + e.message, "error");
-  } finally {
-    btn.textContent = "✅ 구매 요청하기"; btn.disabled = false;
+  const id = btn.dataset.id;
+  ordersData = loadJson(LS_ORDERS, []);
+  ordersData.push({
+    id: newId(),
+    productId: id,
+    productName: btn.dataset.name,
+    price: Number(btn.dataset.price),
+    buyerEmail: currentUser.email,
+    buyerName: currentUser.displayName || currentUser.email,
+    discord: discord || "",
+    phone: phone || "",
+    status: "pending",
+    createdAt: new Date().toISOString()
+  });
+  saveOrders();
+
+  const p = productsData.find(x => x.id === id);
+  if (p) {
+    p.sales = (p.sales || 0) + 1;
+    saveProducts();
   }
+
+  showToast("✅ 구매 요청이 저장됐어요. (이 PC 브라우저에만)", "success");
+  closeModal("purchaseModal");
+  loadProducts();
+  btn.textContent = "✅ 구매 요청하기";
+  btn.disabled = false;
 };
 
 /* ===================================================
@@ -429,107 +454,94 @@ document.querySelectorAll(".admin-tab").forEach(tab => {
     document.querySelectorAll(".admin-tab-content").forEach(x => x.classList.remove("active"));
     tab.classList.add("active");
     document.getElementById("tab-" + t).classList.add("active");
-    if (t === "orderList")     loadOrders();
+    if (t === "orderList") loadOrders();
     if (t === "manageProduct") loadManageProducts();
   };
 });
 
 function switchAdminTab(name) {
   document.querySelectorAll(".admin-tab").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
-  document.querySelectorAll(".admin-tab-content").forEach(c => c.classList.toggle("active", c.id === "tab-"+name));
+  document.querySelectorAll(".admin-tab-content").forEach(c => c.classList.toggle("active", c.id === "tab-" + name));
 }
 
-/* 이미지 URL 미리보기 */
 document.getElementById("adminImage").oninput = () => {
   const url = document.getElementById("adminImage").value.trim();
   const preview = document.getElementById("imagePreview");
-  const img     = document.getElementById("previewImg");
+  const img = document.getElementById("previewImg");
   if (url) {
-    img.src = url; preview.style.display = "block";
-    img.onerror = () => preview.style.display = "none";
-  } else { preview.style.display = "none"; }
+    img.src = url;
+    preview.style.display = "block";
+    img.onerror = () => { preview.style.display = "none"; };
+  } else preview.style.display = "none";
 };
 
-/* ===================================================
-   상품 등록
-=================================================== */
-document.getElementById("adminUpload").onclick = async () => {
-  const name  = document.getElementById("adminName").value.trim();
+document.getElementById("adminUpload").onclick = () => {
+  const name = document.getElementById("adminName").value.trim();
   const price = Number(document.getElementById("adminPrice").value) || 0;
   const image = document.getElementById("adminImage").value.trim();
-  const desc  = document.getElementById("adminDesc").value.trim();
-
+  const desc = document.getElementById("adminDesc").value.trim();
   const checkedCats = [...document.querySelectorAll(".cat-checkbox-group input:checked")].map(cb => cb.value);
-
   const status = document.getElementById("uploadStatus");
 
   if (!name) { setStatus(status, "제목을 입력해주세요!", "error"); return; }
-  if (checkedCats.length === 0) { setStatus(status, "카테고리를 하나 이상 선택해주세요!", "error"); return; }
+  if (!checkedCats.length) { setStatus(status, "카테고리를 하나 이상 선택해주세요!", "error"); return; }
 
   const btn = document.getElementById("adminUpload");
-  btn.disabled = true; btn.textContent = "등록 중…";
+  btn.disabled = true;
+  btn.textContent = "등록 중…";
   setStatus(status, "등록 중…", "loading");
 
-  try {
-    const isFree = price === 0 || checkedCats.includes("free");
-    if (isFree && !checkedCats.includes("free")) checkedCats.push("free");
+  const isFree = price === 0 || checkedCats.includes("free");
+  if (isFree && !checkedCats.includes("free")) checkedCats.push("free");
 
-    await addDoc(collection(db, "products"), {
-      name,
-      price,
-      image: image || "",
-      description: desc,
-      categories:  checkedCats,
-      category:    checkedCats[0],
-      sales:    0,
-      createdAt: new Date().toISOString()
-    });
+  productsData.push({
+    id: newId(),
+    name,
+    price,
+    image: image || "",
+    description: desc,
+    categories: checkedCats,
+    category: checkedCats[0],
+    sales: 0,
+    createdAt: new Date().toISOString()
+  });
+  saveProducts();
 
-    setStatus(status, "✅ 상품이 등록됐어요!", "success");
-    showToast("✅ 상품 등록 완료!", "success");
+  setStatus(status, "✅ 상품이 등록됐어요!", "success");
+  showToast("✅ 상품 등록 완료!", "success");
+  document.getElementById("adminName").value = "";
+  document.getElementById("adminPrice").value = "";
+  document.getElementById("adminImage").value = "";
+  document.getElementById("adminDesc").value = "";
+  document.querySelectorAll(".cat-checkbox-group input").forEach(cb => { cb.checked = false; });
+  document.getElementById("imagePreview").style.display = "none";
+  loadProducts();
 
-    document.getElementById("adminName").value = "";
-    document.getElementById("adminPrice").value = "";
-    document.getElementById("adminImage").value = "";
-    document.getElementById("adminDesc").value = "";
-    document.querySelectorAll(".cat-checkbox-group input").forEach(cb => cb.checked = false);
-    document.getElementById("imagePreview").style.display = "none";
-
-    await loadProducts();
-  } catch (e) {
-    setStatus(status, "오류: " + e.message, "error");
-    showToast("등록 실패: " + e.message, "error");
-  } finally {
-    btn.disabled = false; btn.textContent = "✅ 상품 등록하기";
-  }
+  btn.disabled = false;
+  btn.textContent = "✅ 상품 등록하기";
 };
 
-/* ===================================================
-   상품 관리 (관리자 탭)
-=================================================== */
-async function loadManageProducts() {
+function loadManageProducts() {
   const list = document.getElementById("manageProductList");
-  list.innerHTML = '<p style="color:var(--text3);text-align:center;padding:20px;">불러오는 중…</p>';
-  await loadProducts();
-
-  if (productsData.length === 0) {
+  loadProducts();
+  if (!productsData.length) {
     list.innerHTML = '<p style="color:var(--text3);text-align:center;padding:40px;">등록된 상품이 없어요.</p>';
     return;
   }
-
   list.innerHTML = "";
   productsData.forEach(item => {
     const isFree = !item.price || item.price === 0 || item.categories?.includes("free");
-    const cats   = item.categories || (item.category ? [item.category] : []);
+    const cats = item.categories || (item.category ? [item.category] : []);
     const el = document.createElement("div");
     el.className = "manage-item";
+    const img = escapeHtml(item.image || "https://placehold.co/56x40/1e2235/00d4ff?text=RS");
     el.innerHTML = `
-      <img class="manage-item-img" src="${item.image || 'https://placehold.co/56x40/1e2235/00d4ff?text=RS'}" alt="">
+      <img class="manage-item-img" src="${img}" alt="">
       <div class="manage-item-info">
-        <div class="manage-item-name">${item.name}</div>
+        <div class="manage-item-name">${escapeHtml(item.name)}</div>
         <div class="manage-item-meta">
-          ${cats.map(c => CAT_LABELS[c] || c).join(", ")} &nbsp;|&nbsp;
-          ${isFree ? 'FREE' : '₩ ' + Number(item.price).toLocaleString()} &nbsp;|&nbsp;
+          ${cats.map(c => escapeHtml(CAT_LABELS[c] || c)).join(", ")} &nbsp;|&nbsp;
+          ${isFree ? "FREE" : "₩ " + Number(item.price).toLocaleString()} &nbsp;|&nbsp;
           ${item.sales || 0}판매
         </div>
       </div>
@@ -537,84 +549,69 @@ async function loadManageProducts() {
         <button type="button" class="btn-item-delete">🗑 삭제</button>
       </div>
     `;
-    el.querySelector(".btn-item-delete").onclick = async () => {
-      await deleteProduct(item.id);
+    el.querySelector(".btn-item-delete").onclick = () => {
+      deleteProduct(item.id);
       loadManageProducts();
     };
     list.appendChild(el);
   });
 }
 
-/* ===================================================
-   상품 삭제
-=================================================== */
-async function deleteProduct(id) {
+function deleteProduct(id) {
   if (!confirm("정말 이 상품을 삭제할까요?")) return;
-  try {
-    await deleteDoc(doc(db, "products", id));
-    showToast("🗑 삭제됐어요.", "success");
-    await loadProducts();
-    renderProducts(filterProducts());
-  } catch (e) {
-    showToast("삭제 실패: " + e.message, "error");
-  }
+  productsData = productsData.filter(p => p.id !== id);
+  saveProducts();
+  showToast("🗑 삭제됐어요.", "success");
+  loadProducts();
 }
 
-/* ===================================================
-   구매 목록
-=================================================== */
-async function loadOrders() {
+function loadOrders() {
   const orderList = document.getElementById("orderList");
-  orderList.innerHTML = '<p style="color:var(--text3);text-align:center;padding:30px;">불러오는 중…</p>';
-  try {
-    const snap = await getDocs(collection(db, "orders"));
-    let orders = [];
-    snap.forEach(d => orders.push({ id: d.id, ...d.data() }));
-    orders.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    const filtered = orderStatusFilter === "all" ? orders : orders.filter(o => o.status === orderStatusFilter);
-    if (filtered.length === 0) {
-      orderList.innerHTML = '<p style="color:var(--text3);text-align:center;padding:40px;">구매 요청이 없어요.</p>';
-      return;
-    }
-    orderList.innerHTML = "";
-    filtered.forEach(order => {
-      const date = order.createdAt ? new Date(order.createdAt).toLocaleString("ko-KR") : "";
-      const contacts = [
-        order.discord ? `💬 ${order.discord}` : null,
-        order.phone   ? `📱 ${order.phone}`   : null
-      ].filter(Boolean).join("  |  ");
-
-      const el = document.createElement("div");
-      el.className = "order-item";
-      el.innerHTML = `
-        <div class="order-item-header">
-          <span class="order-product">${order.productName}</span>
-          <span class="order-status ${order.status==='done'?'done':'pending'}">${order.status==='done'?'✅ 완료':'⏳ 대기 중'}</span>
-        </div>
-        <div class="order-contact">${contacts}</div>
-        <div class="order-detail">
-          👤 ${order.buyerName||order.buyerEmail} &nbsp;|&nbsp;
-          💰 ${order.price===0?'FREE':'₩ '+Number(order.price).toLocaleString()} &nbsp;|&nbsp;
-          📅 ${date}
-        </div>
-        ${order.status!=='done' ? `<button type="button" class="btn-done" data-id="${order.id}">✅ 완료 처리</button>` : ''}
-      `;
-      if (order.status !== 'done') {
-        el.querySelector(".btn-done").onclick = async (e) => {
-          const b = e.currentTarget; b.disabled=true; b.textContent="처리 중…";
-          try {
-            await updateDoc(doc(db,"orders",order.id),{status:"done"});
-            showToast("✅ 완료 처리됐어요!","success");
-            loadOrders();
-          } catch(err) { showToast("오류: "+err.message,"error"); b.disabled=false; b.textContent="✅ 완료 처리"; }
-        };
-      }
-      orderList.appendChild(el);
-    });
-  } catch (e) {
-    orderList.innerHTML = `<p style="color:var(--red);text-align:center;">오류: ${e.message}</p>`;
+  ordersData = loadJson(LS_ORDERS, []);
+  ordersData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const filtered = orderStatusFilter === "all" ? ordersData : ordersData.filter(o => o.status === orderStatusFilter);
+  if (!filtered.length) {
+    orderList.innerHTML = '<p style="color:var(--text3);text-align:center;padding:40px;">구매 요청이 없어요.</p>';
+    return;
   }
+  orderList.innerHTML = "";
+  filtered.forEach(order => {
+    const date = order.createdAt ? new Date(order.createdAt).toLocaleString("ko-KR") : "";
+    const contacts = [
+      order.discord ? `💬 ${order.discord}` : null,
+      order.phone ? `📱 ${order.phone}` : null
+    ].filter(Boolean).join("  |  ");
+
+    const el = document.createElement("div");
+    el.className = "order-item";
+    el.innerHTML = `
+      <div class="order-item-header">
+        <span class="order-product">${escapeHtml(order.productName)}</span>
+        <span class="order-status ${order.status === "done" ? "done" : "pending"}">${order.status === "done" ? "✅ 완료" : "⏳ 대기 중"}</span>
+      </div>
+      <div class="order-contact">${escapeHtml(contacts)}</div>
+      <div class="order-detail">
+        👤 ${escapeHtml(order.buyerName || order.buyerEmail)} &nbsp;|&nbsp;
+        💰 ${order.price === 0 ? "FREE" : "₩ " + Number(order.price).toLocaleString()} &nbsp;|&nbsp;
+        📅 ${escapeHtml(date)}
+      </div>
+      ${order.status !== "done" ? `<button type="button" class="btn-done" data-id="${escapeHtml(order.id)}">✅ 완료 처리</button>` : ""}
+    `;
+    if (order.status !== "done") {
+      el.querySelector(".btn-done").onclick = (e) => {
+        const b = e.currentTarget;
+        b.disabled = true;
+        const oid = order.id;
+        ordersData = loadJson(LS_ORDERS, []);
+        const o = ordersData.find(x => x.id === oid);
+        if (o) o.status = "done";
+        saveOrders();
+        showToast("✅ 완료 처리됐어요!", "success");
+        loadOrders();
+      };
+    }
+    orderList.appendChild(el);
+  });
 }
 
 document.querySelectorAll(".order-filter-btn").forEach(btn => {
@@ -627,17 +624,17 @@ document.querySelectorAll(".order-filter-btn").forEach(btn => {
 });
 
 /* ===================================================
-   뉴스 추가 (파일 업로드)
+   뉴스 이미지 (data URL 로만 저장)
 =================================================== */
 const newsFileInput = document.getElementById("newsImageFile");
-const newsFileArea  = document.getElementById("newsFileArea");
+const newsFileArea = document.getElementById("newsFileArea");
 
 newsFileInput.onchange = (e) => handleNewsFile(e.target.files[0]);
-
-newsFileArea.ondragover  = (e) => { e.preventDefault(); newsFileArea.style.borderColor="var(--accent)"; };
-newsFileArea.ondragleave = ()  => { newsFileArea.style.borderColor=""; };
+newsFileArea.ondragover = (e) => { e.preventDefault(); newsFileArea.style.borderColor = "var(--accent)"; };
+newsFileArea.ondragleave = () => { newsFileArea.style.borderColor = ""; };
 newsFileArea.ondrop = (e) => {
-  e.preventDefault(); newsFileArea.style.borderColor="";
+  e.preventDefault();
+  newsFileArea.style.borderColor = "";
   const file = e.dataTransfer.files[0];
   if (file && file.type.startsWith("image/")) handleNewsFile(file);
   else showToast("이미지 파일만 업로드할 수 있어요!", "error");
@@ -645,6 +642,10 @@ newsFileArea.ondrop = (e) => {
 
 function handleNewsFile(file) {
   if (!file) return;
+  if (file.size > 1.5 * 1024 * 1024) {
+    showToast("이미지는 1.5MB 이하로 올려 주세요 (로컬 저장 용량 때문이에요).", "error");
+    return;
+  }
   newsImageFile = file;
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -657,72 +658,57 @@ function handleNewsFile(file) {
 }
 
 document.getElementById("removeNewsImg").onclick = () => {
-  newsImageFile    = null;
+  newsImageFile = null;
   newsImageDataURL = null;
   document.getElementById("newsImagePreview").style.display = "none";
   document.getElementById("newsFileUI").style.display = "block";
   newsFileInput.value = "";
 };
 
-document.getElementById("newsUpload").onclick = async () => {
+document.getElementById("newsUpload").onclick = () => {
   const title = document.getElementById("newsTitle").value.trim();
-  const body  = document.getElementById("newsBody").value.trim();
+  const body = document.getElementById("newsBody").value.trim();
   const status = document.getElementById("newsUploadStatus");
-
   if (!title) { setStatus(status, "제목을 입력해주세요!", "error"); return; }
-  if (!body)  { setStatus(status, "내용을 입력해주세요!", "error"); return; }
+  if (!body) { setStatus(status, "내용을 입력해주세요!", "error"); return; }
 
   const btn = document.getElementById("newsUpload");
-  btn.disabled = true; btn.textContent = "등록 중…";
+  btn.disabled = true;
+  btn.textContent = "등록 중…";
   setStatus(status, "등록 중…", "loading");
 
-  try {
-    let imageURL = "";
+  loadNews();
+  const imageURL = newsImageDataURL || "";
+  newsData.push({
+    id: newId(),
+    title,
+    body,
+    imageURL,
+    createdAt: new Date().toISOString()
+  });
+  saveNews();
 
-    if (newsImageFile) {
-      setStatus(status, "이미지 업로드 중…", "loading");
-      const storageRef = ref(storage, `news/${Date.now()}_${newsImageFile.name}`);
-      const snapshot   = await uploadBytes(storageRef, newsImageFile);
-      imageURL         = await getDownloadURL(snapshot.ref);
-    }
+  setStatus(status, "✅ 뉴스가 등록됐어요!", "success");
+  showToast("📰 뉴스 등록 완료!", "success");
+  document.getElementById("newsTitle").value = "";
+  document.getElementById("newsBody").value = "";
+  document.getElementById("removeNewsImg").click();
 
-    await addDoc(collection(db, "news"), {
-      title, body, imageURL,
-      createdAt: new Date().toISOString()
-    });
-
-    setStatus(status, "✅ 뉴스가 등록됐어요!", "success");
-    showToast("📰 뉴스 등록 완료!", "success");
-
-    document.getElementById("newsTitle").value = "";
-    document.getElementById("newsBody").value  = "";
-    document.getElementById("removeNewsImg").click();
-
-    await loadNews();
-  } catch (e) {
-    setStatus(status, "오류: " + e.message, "error");
-    showToast("뉴스 등록 실패: " + e.message, "error");
-  } finally {
-    btn.disabled = false; btn.textContent = "📰 뉴스 등록하기";
-  }
+  btn.disabled = false;
+  btn.textContent = "📰 뉴스 등록하기";
 };
 
-/* ===================================================
-   뉴스 삭제
-=================================================== */
-async function deleteNews(id) {
+function deleteNews(id) {
   if (!confirm("정말 이 뉴스를 삭제할까요?")) return;
-  try {
-    await deleteDoc(doc(db, "news", id));
-    showToast("🗑 뉴스가 삭제됐어요.", "success");
-    renderNewsPage();
-  } catch (e) {
-    showToast("삭제 실패: " + e.message, "error");
-  }
+  loadNews();
+  newsData = newsData.filter(n => n.id !== id);
+  saveNews();
+  showToast("🗑 뉴스가 삭제됐어요.", "success");
+  renderNewsPage();
 }
 
 /* ===================================================
-   카테고리 버튼
+   카테고리 / 검색
 =================================================== */
 document.querySelectorAll(".cat-btn").forEach(btn => {
   btn.onclick = () => {
@@ -744,28 +730,28 @@ const slidesWrapper = document.getElementById("slidesWrapper");
 
 function goSlide(n) {
   currentSlide = n;
-  slidesWrapper.style.transform = `translateX(-${n*100}%)`;
-  document.querySelectorAll(".dot").forEach((d,i) => d.classList.toggle("active",i===n));
+  slidesWrapper.style.transform = `translateX(-${n * 100}%)`;
+  document.querySelectorAll(".dot").forEach((d, i) => d.classList.toggle("active", i === n));
 }
-window.goSlide   = goSlide;
-window.nextSlide = () => goSlide((currentSlide+1) % totalSlides);
-window.prevSlide = () => goSlide((currentSlide-1+totalSlides) % totalSlides);
+window.goSlide = goSlide;
+window.nextSlide = () => goSlide((currentSlide + 1) % totalSlides);
+window.prevSlide = () => goSlide((currentSlide - 1 + totalSlides) % totalSlides);
 setInterval(() => window.nextSlide(), 5000);
 
 /* ===================================================
-   테마 토글
+   테마
 =================================================== */
 let isDark = true;
 document.getElementById("themeToggle").onclick = () => {
   isDark = !isDark;
-  document.documentElement.setAttribute("data-theme", isDark?"dark":"light");
+  document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
   document.getElementById("themeToggle").textContent = isDark ? "🌙" : "☀️";
 };
 
 /* ===================================================
-   모달 & 유틸
+   모달
 =================================================== */
-function openModal(id)  { document.getElementById(id).classList.add("active"); }
+function openModal(id) { document.getElementById(id).classList.add("active"); }
 function closeModal(id) { document.getElementById(id).classList.remove("active"); }
 window.closeModal = closeModal;
 
@@ -778,12 +764,12 @@ document.addEventListener("keydown", e => {
 
 function setStatus(el, msg, type) {
   el.textContent = msg;
-  el.className   = "upload-status " + type;
-  if (type === "success") setTimeout(() => el.textContent="", 4000);
+  el.className = "upload-status " + type;
+  if (type === "success") setTimeout(() => { el.textContent = ""; }, 4000);
 }
 
 let toastTimer;
-function showToast(msg, type="") {
+function showToast(msg, type = "") {
   const t = document.getElementById("toast");
   t.textContent = msg;
   t.className = `toast ${type} show`;
@@ -792,7 +778,9 @@ function showToast(msg, type="") {
 }
 
 /* ===================================================
-   초기화
+   시작
 =================================================== */
+loadSavedUser();
+applyUserUI();
 loadProducts();
 loadNews();
