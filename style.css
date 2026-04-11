@@ -80,6 +80,25 @@ body::before{
 .search-box input::placeholder{color:var(--text3);}
 .search-box input:focus{border-color:rgba(0,212,255,0.4);box-shadow:var(--glow);}
 .nav-right{display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
+/* 로그인 전·후 전환 (버튼이 안 보이던 문제 방지) */
+.nav-right #loginBtn{display:none;}
+.nav-right #userMenu{display:none;}
+.nav-right.auth-guest #loginBtn{display:inline-flex !important;}
+.nav-right.auth-guest #userMenu{display:none !important;}
+.nav-right.auth-user #loginBtn{display:none !important;}
+.nav-right.auth-user #userMenu{display:flex !important;}
+.nav-right #adminPanelBtn{display:none !important;}
+.nav-right.nav-admin #adminPanelBtn{display:inline-flex !important;}
+.user-text{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;max-width:140px;}
+.user-role-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+.user-role-badge.role-admin{background:rgba(245,158,11,0.2);color:var(--accent3);border:1px solid rgba(245,158,11,0.35);}
+.user-role-badge.role-member{background:var(--surface2);color:var(--text3);border:1px solid var(--border);}
+.btn-nick-edit{
+  width:30px;height:30px;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text2);font-size:14px;cursor:pointer;
+  flex-shrink:0;transition:var(--transition);
+}
+.btn-nick-edit:hover{border-color:var(--accent);color:var(--accent);}
 .btn-login{
   padding:8px 20px; border-radius:40px; border:1px solid var(--accent);
   background:transparent; color:var(--accent);
