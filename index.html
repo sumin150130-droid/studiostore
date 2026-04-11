@@ -28,14 +28,14 @@
     <input id="searchInput" placeholder="에셋, 플러그인, 스크립트를 검색하세요…">
   </div>
   <div class="nav-right">
-    <button type="button" id="loginBtn" class="btn-login">닉네임 설정</button>
+    <button type="button" id="loginBtn" class="btn-login">로그인</button>
     <div id="userMenu" style="display:none;" class="user-menu">
       <img id="userAvatar" src="" class="avatar" alt="avatar">
       <span id="userName" class="user-name"></span>
       <button type="button" id="adminPanelBtn" style="display:none;" class="btn-admin-nav">⚙ 관리자</button>
-      <button id="logoutBtn" class="btn-logout">로그아웃</button>
+      <button type="button" id="logoutBtn" class="btn-logout">로그아웃</button>
     </div>
-    <button class="theme-toggle" id="themeToggle">🌙</button>
+    <button type="button" class="theme-toggle" id="themeToggle">🌙</button>
   </div>
 </header>
 
@@ -86,15 +86,15 @@
 
   <!-- 카테고리 바 -->
   <section class="category-bar">
-    <button class="cat-btn active" data-filter="all"><span>⊞</span> 전체</button>
-    <button class="cat-btn" data-filter="popular"><span>🔥</span> 인기</button>
-    <button class="cat-btn" data-filter="free"><span>🎁</span> 무료</button>
-    <button class="cat-btn" data-filter="lowprice"><span>↓</span> 낮은 가격순</button>
-    <button class="cat-btn" data-filter="highprice"><span>↑</span> 높은 가격순</button>
-    <button class="cat-btn" data-filter="script"><span>📜</span> 스크립트</button>
-    <button class="cat-btn" data-filter="plugin"><span>🔧</span> 플러그인</button>
-    <button class="cat-btn" data-filter="map"><span>🗺</span> 맵</button>
-    <button class="cat-btn" data-filter="ui"><span>🖼</span> UI</button>
+    <button type="button" class="cat-btn active" data-filter="all"><span>⊞</span> 전체</button>
+    <button type="button" class="cat-btn" data-filter="popular"><span>🔥</span> 인기</button>
+    <button type="button" class="cat-btn" data-filter="free"><span>🎁</span> 무료</button>
+    <button type="button" class="cat-btn" data-filter="lowprice"><span>↓</span> 낮은 가격순</button>
+    <button type="button" class="cat-btn" data-filter="highprice"><span>↑</span> 높은 가격순</button>
+    <button type="button" class="cat-btn" data-filter="script"><span>📜</span> 스크립트</button>
+    <button type="button" class="cat-btn" data-filter="plugin"><span>🔧</span> 플러그인</button>
+    <button type="button" class="cat-btn" data-filter="map"><span>🗺</span> 맵</button>
+    <button type="button" class="cat-btn" data-filter="ui"><span>🖼</span> UI</button>
   </section>
 
   <!-- TOP 4 -->
@@ -198,7 +198,7 @@
       <span id="detailSales" class="detail-sales"></span>
     </div>
     <div class="detail-divider"></div>
-    <button id="detailBuyBtn" class="btn-detail-buy">🛒 구매하기</button>
+    <button type="button" id="detailBuyBtn" class="btn-detail-buy">🛒 구매하기</button>
   </div>
 </aside>
 
@@ -238,7 +238,7 @@
       <input id="buyerDiscord" placeholder="💬 디스코드 ID  (예: username 또는 user#1234)" class="modal-input">
       <div class="or-divider"><span>또는</span></div>
       <input id="buyerPhone" placeholder="📱 전화번호" class="modal-input">
-      <button id="modalBuy" class="btn-buy">✅ 구매 요청하기</button>
+      <button type="button" id="modalBuy" class="btn-buy">✅ 구매 요청하기</button>
       <p class="purchase-note">💡 실제 결제가 발생하지 않아요. 입력한 연락처로 에셋을 전달해드려요.</p>
     </div>
   </div>
@@ -312,9 +312,9 @@
     <!-- 구매 목록 탭 -->
     <div id="tab-orderList" class="admin-tab-content">
       <div class="order-filter-row">
-        <button class="order-filter-btn active" data-status="all">전체</button>
-        <button class="order-filter-btn" data-status="pending">⏳ 대기 중</button>
-        <button class="order-filter-btn" data-status="done">✅ 완료</button>
+        <button type="button" class="order-filter-btn active" data-status="all">전체</button>
+        <button type="button" class="order-filter-btn" data-status="pending">⏳ 대기 중</button>
+        <button type="button" class="order-filter-btn" data-status="done">✅ 완료</button>
       </div>
       <div id="orderList" class="order-list">
         <p style="color:var(--text3);text-align:center;padding:40px 0;">로딩 중…</p>
@@ -358,6 +358,6 @@
 <!-- ===== TOAST ===== -->
 <div id="toast" class="toast"></div>
 
-<script src="script.js"></script>
+<script type="module" src="script.js"></script>
 </body>
 </html>
