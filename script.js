@@ -15,7 +15,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-const storage = firebase.storage();
 
 const ADMIN_EMAILS = ["sumin150130@gmail.com"];
 const ADMIN_EMAILS_NORMALIZED = ADMIN_EMAILS.map(e => String(e).toLowerCase().trim()).filter(Boolean);
@@ -30,10 +29,9 @@ function formatFirebaseError(err) {
   const code = err?.code || "";
   const msg = err?.message || String(err);
   if (code === "permission-denied" || /permission/i.test(msg)) {
-    return "권한 없음: Firestore·Storage 규칙을 확인하세요.";
+    return "Firestore 규칙: 콘솔 → Firestore → 규칙에 FIREBASE_규칙_붙여넣기.txt 붙여넣고 [게시]";
   }
   if (code === "unauthenticated") return "로그인이 필요해요.";
-  if (code === "storage/unauthorized") return "스토리지 업로드 권한이 없어요.";
   return msg;
 }
 
@@ -727,8 +725,14 @@ newsFileArea.addEventListener("drop", (e) => {
   else showToast("이미지 파일만 업로드할 수 있어요!", "error");
 });
 
+const NEWS_FILE_MAX = 400 * 1024;
+
 function handleNewsFile(file) {
   if (!file) return;
+  if (file.size > NEWS_FILE_MAX) {
+    showToast(`파일은 ${NEWS_FILE_MAX / 1024}KB 이하만 저장돼요. 위에 이미지 URL을 넣거나 사진을 줄여 주세요.`, "error");
+    return;
+  }
   newsImageFile = file;
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -764,18 +768,21 @@ document.getElementById("newsUpload").addEventListener("click", async () => {
   setStatus(status, "등록 중…", "loading");
 
   try {
+    const linkUrl = (document.getElementById("newsImageLink")?.value || "").trim();
     let imageURL = "";
-    if (newsImageFile) {
-      setStatus(status, "이미지 업로드 중…", "loading");
-      const storageRef = storage.ref(`news/${Date.now()}_${newsImageFile.name}`);
-      const task = await storageRef.put(newsImageFile);
-      imageURL = await task.ref.getDownloadURL();
+    if (linkUrl) imageURL = linkUrl;
+    else if (newsImageDataURL) {
+      if (newsImageDataURL.length > 700000) {
+        setStatus(status, "이미지가 너무 커요. 위에 이미지 URL을 넣거나 더 작은 파일을 쓰세요.", "error");
+        return;
+      }
+      imageURL = newsImageDataURL;
     }
 
     await db.collection("news").add({
       title,
       body,
-      imageURL,
+      imageURL: imageURL || "",
       createdAt: new Date().toISOString()
     });
 
@@ -783,6 +790,8 @@ document.getElementById("newsUpload").addEventListener("click", async () => {
     showToast("📰 뉴스 등록 완료!", "success");
     document.getElementById("newsTitle").value = "";
     document.getElementById("newsBody").value = "";
+    const linkEl = document.getElementById("newsImageLink");
+    if (linkEl) linkEl.value = "";
     document.getElementById("removeNewsImg").click();
     await loadNews();
   } catch (e) {
