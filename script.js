@@ -34,7 +34,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // ===== ADMIN UIDS (파이어베이스 UID를 여기에 추가) =====
-const ADMIN_UIDS = ["REPLACE_WITH_YOUR_UID"];
+const ADMIN_UIDS = ["L3gA44c3bRMaRnpQ0mhG0buQmhi1"];
 
 // ===== DOM REFS =====
 const loginBtn = document.getElementById("loginBtn");
