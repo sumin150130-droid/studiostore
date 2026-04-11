@@ -21,7 +21,7 @@
   --font-body: 'Noto Sans KR', sans-serif;
   --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
 }
-[data-theme="light"] {
+[data-theme=light] {
   --bg:#f0f2f8; --bg2:#e8eaf0; --bg3:#dde0eb;
   --surface:#ffffff; --surface2:#f5f6fc;
   --border:rgba(0,0,0,0.08);
@@ -56,7 +56,7 @@ body::before{
   background:rgba(13,15,23,0.88); backdrop-filter:blur(20px);
   border-bottom:1px solid var(--border);
 }
-[data-theme="light"] .navbar{background:rgba(240,242,248,0.92);}
+[data-theme=light] .navbar{background:rgba(240,242,248,0.92);}
 .nav-left{display:flex;align-items:center;gap:32px;flex-shrink:0;}
 .logo{display:flex;align-items:center;gap:8px;font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--text);}
 .logo-icon{color:var(--accent);animation:pulse 3s ease-in-out infinite;}
@@ -79,7 +79,7 @@ body::before{
 }
 .search-box input::placeholder{color:var(--text3);}
 .search-box input:focus{border-color:rgba(0,212,255,0.4);box-shadow:var(--glow);}
-.nav-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.nav-right{display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
 .btn-login{
   padding:8px 20px; border-radius:40px; border:1px solid var(--accent);
   background:transparent; color:var(--accent);
@@ -87,11 +87,12 @@ body::before{
   transition:var(--transition);
 }
 .btn-login:hover{background:var(--accent);color:#000;}
-.user-menu{display:flex;align-items:center;gap:10px;}
+.user-menu{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;}
 .avatar{width:30px;height:30px;border-radius:50%;border:2px solid var(--accent);object-fit:cover;}
-.user-name{font-size:13px;color:var(--text2);}
+.user-name{font-size:13px;color:var(--text2);max-width:min(160px,28vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .btn-admin-nav{
   display:inline-flex;align-items:center;gap:5px;
+  flex-shrink:0;white-space:nowrap;
   padding:7px 16px;border-radius:40px;
   border:1px solid var(--accent3); background:rgba(245,158,11,0.1);
   color:var(--accent3); font-family:var(--font-body);font-size:12px;font-weight:700;
