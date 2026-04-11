@@ -11,7 +11,6 @@
 <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-storage-compat.js"></script>
 </head>
 <body>
 
@@ -28,16 +27,20 @@
       <a href="#" class="nav-link" data-page="news">뉴스</a>
     </nav>
   </div>
-  <div class="search-box">
+  <div class="search-box"> 
     <span class="search-icon">🔍</span>
     <input id="searchInput" placeholder="에셋, 플러그인, 스크립트를 검색하세요…">
   </div>
-  <div class="nav-right">
+  <div class="nav-right" id="navRight">
     <button type="button" id="loginBtn" class="btn-login">로그인</button>
-    <div id="userMenu" style="display:none;" class="user-menu">
-      <img id="userAvatar" src="" class="avatar" alt="avatar">
-      <span id="userName" class="user-name"></span>
-      <button type="button" id="adminPanelBtn" style="display:none;" class="btn-admin-nav">⚙ 관리자</button>
+    <div id="userMenu" class="user-menu">
+      <img id="userAvatar" src="" class="avatar" alt="">
+      <div class="user-text">
+        <span id="userName" class="user-name"></span>
+        <span id="userRoleBadge" class="user-role-badge"></span>
+      </div>
+      <button type="button" id="editNickBtn" class="btn-nick-edit" title="닉네임 변경">✎</button>
+      <button type="button" id="adminPanelBtn" class="btn-admin-nav">⚙ 관리자</button>
       <button type="button" id="logoutBtn" class="btn-logout">로그아웃</button>
     </div>
     <button type="button" class="theme-toggle" id="themeToggle">🌙</button>
@@ -249,6 +252,20 @@
   </div>
 </div>
 
+<!-- 닉네임 설정 (구글 로그인 직후 / 닉네임 변경) -->
+<div id="nickModal" class="modal">
+  <div class="modal-backdrop" id="nickModalBackdrop"></div>
+  <div class="modal-content purchase-modal-content">
+    <div class="modal-body">
+      <h3 class="purchase-modal-title">닉네임 설정</h3>
+      <p class="purchase-note" style="margin-bottom:12px;text-align:left;">스토어에 표시될 이름이에요. 같은 구글 계정으로 다시 들어오면 이 브라우저에 저장된 닉네임이 그대로 적용돼요.</p>
+      <input id="nickInput" class="modal-input" maxlength="24" placeholder="닉네임 (2~24자)" autocomplete="nickname">
+      <button type="button" id="nickSaveBtn" class="btn-buy" style="margin-top:10px;">저장하고 시작하기</button>
+      <p id="nickModalHint" class="upload-status error" style="margin-top:8px;min-height:0;"></p>
+    </div>
+  </div>
+</div>
+
 <!-- ===================================================
      관리자 패널
 =================================================== -->
@@ -338,7 +355,11 @@
           <textarea id="newsBody" placeholder="뉴스 내용을 입력하세요" class="modal-input modal-textarea" rows="5"></textarea>
         </div>
         <div class="form-group">
-          <label class="form-label">이미지 파일 업로드</label>
+          <label class="form-label">이미지 URL (선택)</label>
+          <input id="newsImageLink" type="url" class="modal-input" placeholder="https://... (큰 이미지는 URL로 넣는 걸 추천)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">이미지 파일 (선택, 작은 사진만 · Storage 없이 저장)</label>
           <div class="file-upload-area" id="newsFileArea">
             <input type="file" id="newsImageFile" accept="image/*" class="file-input">
             <div class="file-upload-ui" id="newsFileUI">
