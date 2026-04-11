@@ -10,7 +10,7 @@
 </head>
 <body>
 
-<!-- NAVBAR -->
+<!-- ===== NAVBAR ===== -->
 <header class="navbar">
   <div class="nav-left">
     <div class="logo">
@@ -23,24 +23,25 @@
       <a href="#" class="nav-link">뉴스</a>
     </nav>
   </div>
+
   <div class="search-box">
     <span class="search-icon">🔍</span>
     <input id="searchInput" placeholder="에셋, 플러그인, 스크립트를 검색하세요…">
   </div>
+
   <div class="nav-right">
-    <span id="userEmail" class="user-email"></span>
     <button id="loginBtn" class="btn-login">로그인</button>
     <div id="userMenu" style="display:none;" class="user-menu">
       <img id="userAvatar" src="" class="avatar" alt="avatar">
-      <span id="userName"></span>
+      <span id="userName" class="user-name"></span>
+      <button id="adminPanelBtn" style="display:none;" class="btn-admin-nav">⚙ 관리자</button>
       <button id="logoutBtn" class="btn-logout">로그아웃</button>
     </div>
-    <button id="adminPanelBtn" style="display:none;" class="btn-admin">⚙ 관리자</button>
-    <button class="theme-toggle" id="themeToggle" title="테마 변경">🌙</button>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
   </div>
 </header>
 
-<!-- HERO SLIDER -->
+<!-- ===== HERO SLIDER ===== -->
 <section class="hero-slider">
   <div class="slides-wrapper" id="slidesWrapper">
     <div class="slide slide-1">
@@ -58,7 +59,7 @@
         <div class="slide-badge">✨ 무료 에셋</div>
         <h1>크리에이터를 위한<br>무료 리소스 컬렉션</h1>
         <p>커뮤니티가 직접 만든 고퀄리티 무료 에셋</p>
-        <button class="btn-hero" onclick="document.getElementById('filterFree').click()">무료 에셋 보기 →</button>
+        <button class="btn-hero" onclick="document.querySelector('[data-filter=free]').click()">무료 에셋 보기 →</button>
       </div>
     </div>
     <div class="slide slide-3">
@@ -67,11 +68,11 @@
         <div class="slide-badge">💎 프리미엄</div>
         <h1>당신의 게임을<br>한 단계 업그레이드</h1>
         <p>전문 개발자가 제작한 프리미엄 플러그인 & 스크립트</p>
-        <button class="btn-hero" onclick="document.getElementById('sortPopular').click()">인기 에셋 보기 →</button>
+        <button class="btn-hero" onclick="document.querySelector('[data-filter=popular]').click()">인기 에셋 보기 →</button>
       </div>
     </div>
   </div>
-  <div class="slider-dots" id="sliderDots">
+  <div class="slider-dots">
     <span class="dot active" onclick="goSlide(0)"></span>
     <span class="dot" onclick="goSlide(1)"></span>
     <span class="dot" onclick="goSlide(2)"></span>
@@ -80,38 +81,20 @@
   <button class="slider-arrow right" onclick="nextSlide()">›</button>
 </section>
 
-<!-- CATEGORY BAR -->
+<!-- ===== CATEGORY BAR ===== -->
 <section class="category-bar">
-  <button class="cat-btn active" id="sortAll" data-filter="all">
-    <span class="cat-icon">⊞</span> 전체
-  </button>
-  <button class="cat-btn" id="sortPopular" data-filter="popular">
-    <span class="cat-icon">🔥</span> 인기
-  </button>
-  <button class="cat-btn" id="filterFree" data-filter="free">
-    <span class="cat-icon">🎁</span> 무료
-  </button>
-  <button class="cat-btn" id="sortLow" data-filter="lowprice">
-    <span class="cat-icon">↓</span> 낮은 가격순
-  </button>
-  <button class="cat-btn" id="sortHigh" data-filter="highprice">
-    <span class="cat-icon">↑</span> 높은 가격순
-  </button>
-  <button class="cat-btn" data-filter="script">
-    <span class="cat-icon">📜</span> 스크립트
-  </button>
-  <button class="cat-btn" data-filter="plugin">
-    <span class="cat-icon">🔧</span> 플러그인
-  </button>
-  <button class="cat-btn" data-filter="map">
-    <span class="cat-icon">🗺</span> 맵
-  </button>
-  <button class="cat-btn" data-filter="ui">
-    <span class="cat-icon">🖼</span> UI
-  </button>
+  <button class="cat-btn active" data-filter="all"><span>⊞</span> 전체</button>
+  <button class="cat-btn" data-filter="popular"><span>🔥</span> 인기</button>
+  <button class="cat-btn" data-filter="free"><span>🎁</span> 무료</button>
+  <button class="cat-btn" data-filter="lowprice"><span>↓</span> 낮은 가격순</button>
+  <button class="cat-btn" data-filter="highprice"><span>↑</span> 높은 가격순</button>
+  <button class="cat-btn" data-filter="script"><span>📜</span> 스크립트</button>
+  <button class="cat-btn" data-filter="plugin"><span>🔧</span> 플러그인</button>
+  <button class="cat-btn" data-filter="map"><span>🗺</span> 맵</button>
+  <button class="cat-btn" data-filter="ui"><span>🖼</span> UI</button>
 </section>
 
-<!-- TOP 4 SECTION -->
+<!-- ===== TOP 4 ===== -->
 <section class="top-section container">
   <div class="section-header">
     <div class="section-title-bar"></div>
@@ -123,8 +106,8 @@
   <div class="top4-grid" id="top4Grid"></div>
 </section>
 
-<!-- MAIN GRID -->
-<main class="container" style="margin-top:0;">
+<!-- ===== MAIN GRID ===== -->
+<main class="container">
   <div class="section-header">
     <div class="section-title-bar"></div>
     <div>
@@ -139,68 +122,116 @@
   </div>
 </main>
 
-<!-- PRODUCT MODAL -->
-<div id="productModal" class="modal">
-  <div class="modal-backdrop" onclick="closeModal('productModal')"></div>
-  <div class="modal-content">
-    <button class="modal-close" onclick="closeModal('productModal')">✕</button>
-    <img id="modalImage" src="" alt="">
+<!-- ===== 상품 상세 슬라이드 패널 (오른쪽) ===== -->
+<div id="detailOverlay" class="detail-overlay" onclick="closeDetail()"></div>
+<aside id="detailPanel" class="detail-panel">
+  <button class="detail-close" onclick="closeDetail()">✕</button>
+  <div class="detail-img-wrap">
+    <img id="detailImage" src="" alt="">
+    <span id="detailCatBadge" class="detail-cat-badge"></span>
+  </div>
+  <div class="detail-body">
+    <h2 id="detailName"></h2>
+    <p id="detailDesc" class="detail-desc"></p>
+    <div class="detail-price-row">
+      <span id="detailPrice" class="detail-price"></span>
+      <span id="detailSales" class="detail-sales"></span>
+    </div>
+    <div class="detail-divider"></div>
+    <button id="detailBuyBtn" class="btn-detail-buy">🛒 구매하기</button>
+  </div>
+</aside>
+
+<!-- ===== 구매 모달 ===== -->
+<div id="purchaseModal" class="modal">
+  <div class="modal-backdrop" onclick="closeModal('purchaseModal')"></div>
+  <div class="modal-content purchase-modal-content">
+    <button class="modal-close" onclick="closeModal('purchaseModal')">✕</button>
     <div class="modal-body">
-      <div class="modal-badge" id="modalBadge"></div>
-      <h2 id="modalName"></h2>
-      <p id="modalDesc" class="modal-desc"></p>
-      <div class="modal-price-row">
-        <span class="modal-price" id="modalPrice"></span>
-        <span class="modal-sales" id="modalSales"></span>
+      <h3 class="purchase-modal-title">구매 요청</h3>
+      <div class="purchase-product-info">
+        <span id="purchaseProductName" class="purchase-product-name"></span>
+        <span id="purchasePrice" class="purchase-price-tag"></span>
       </div>
       <div class="modal-divider"></div>
-      <p class="modal-label">구매 정보 입력</p>
+      <p class="modal-label">연락처 입력 <span class="label-note">(하나만 입력하면 돼요)</span></p>
+      <input id="buyerDiscord" placeholder="💬 디스코드 ID  (예: username 또는 user#1234)" class="modal-input">
+      <div class="or-divider"><span>또는</span></div>
       <input id="buyerPhone" placeholder="📱 전화번호" class="modal-input">
-      <input id="buyerDiscord" placeholder="💬 디스코드 ID (예: user#1234)" class="modal-input">
-      <button id="modalBuy" class="btn-buy">🛒 구매 요청하기</button>
+      <button id="modalBuy" class="btn-buy">✅ 구매 요청하기</button>
+      <p class="purchase-note">💡 실제 결제가 발생하지 않아요. 입력한 연락처로 에셋을 전달해드려요.</p>
     </div>
   </div>
 </div>
 
-<!-- ADMIN ADD MODAL -->
-<div id="adminModal" class="modal">
-  <div class="modal-backdrop" onclick="closeModal('adminModal')"></div>
-  <div class="modal-content">
-    <button class="modal-close" onclick="closeModal('adminModal')">✕</button>
-    <div class="modal-body">
-      <h2>📦 상품 추가</h2>
-      <input id="adminName" placeholder="상품 이름" class="modal-input">
-      <input id="adminPrice" type="number" placeholder="가격 (₩ / 0=무료)" class="modal-input">
-      <input id="adminImage" placeholder="이미지 URL" class="modal-input">
-      <input id="adminDesc" placeholder="상품 설명" class="modal-input">
-      <select id="adminCategory" class="modal-input modal-select">
-        <option value="">카테고리 선택</option>
-        <option value="script">스크립트</option>
-        <option value="plugin">플러그인</option>
-        <option value="map">맵</option>
-        <option value="ui">UI</option>
-      </select>
-      <button id="adminUpload" class="btn-buy">✅ 상품 등록</button>
-    </div>
-  </div>
-</div>
-
-<!-- ADMIN PANEL MODAL (orders) -->
+<!-- ===== 관리자 패널 ===== -->
 <div id="adminPanel" class="modal">
   <div class="modal-backdrop" onclick="closeModal('adminPanel')"></div>
-  <div class="modal-content admin-wide">
+  <div class="modal-content admin-panel-content">
     <button class="modal-close" onclick="closeModal('adminPanel')">✕</button>
-    <div class="modal-body">
-      <h2>📋 구매 요청 목록</h2>
-      <div id="orderList" class="order-list"></div>
-      <div class="admin-actions">
-        <button id="openAddProduct" class="btn-admin-action">+ 상품 추가</button>
+    <div class="admin-header">
+      <span class="admin-badge">⚙ 관리자 패널</span>
+    </div>
+
+    <!-- 탭 버튼 -->
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="addProduct">📦 상품 추가</button>
+      <button class="admin-tab" data-tab="orderList">📋 구매 목록</button>
+    </div>
+
+    <!-- 상품 추가 탭 -->
+    <div id="tab-addProduct" class="admin-tab-content active">
+      <div class="admin-form">
+        <div class="form-group">
+          <label class="form-label">제목 <span class="required">*</span></label>
+          <input id="adminName" placeholder="상품 제목을 입력하세요" class="modal-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">설명</label>
+          <textarea id="adminDesc" placeholder="상품 설명을 입력하세요" class="modal-input modal-textarea" rows="3"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">가격 (₩) <span class="form-hint">0 = 무료</span></label>
+            <input id="adminPrice" type="number" min="0" placeholder="0" class="modal-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">카테고리 <span class="required">*</span></label>
+            <select id="adminCategory" class="modal-input modal-select">
+              <option value="">선택하세요</option>
+              <option value="script">📜 스크립트</option>
+              <option value="plugin">🔧 플러그인</option>
+              <option value="map">🗺 맵</option>
+              <option value="ui">🖼 UI</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">이미지 URL</label>
+          <input id="adminImage" placeholder="https://... 이미지 주소를 입력하세요" class="modal-input">
+          <div id="imagePreview" class="image-preview" style="display:none;">
+            <img id="previewImg" src="" alt="미리보기">
+          </div>
+        </div>
+        <button id="adminUpload" class="btn-buy" style="margin-top:8px;">✅ 상품 등록하기</button>
+      </div>
+    </div>
+
+    <!-- 구매 목록 탭 -->
+    <div id="tab-orderList" class="admin-tab-content">
+      <div class="order-filter-row">
+        <button class="order-filter-btn active" data-status="all">전체</button>
+        <button class="order-filter-btn" data-status="pending">⏳ 대기 중</button>
+        <button class="order-filter-btn" data-status="done">✅ 완료</button>
+      </div>
+      <div id="orderList" class="order-list">
+        <p style="color:var(--text3);text-align:center;padding:40px 0;">로딩 중…</p>
       </div>
     </div>
   </div>
 </div>
 
-<!-- TOAST -->
+<!-- ===== TOAST ===== -->
 <div id="toast" class="toast"></div>
 
 <script type="module" src="script.js"></script>
