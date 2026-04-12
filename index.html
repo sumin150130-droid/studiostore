@@ -5,16 +5,392 @@
 <title>RSStore — Roblox Studio Store</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap">
-<link rel="stylesheet" href="style.css">
-<!-- Firebase (compat): script.js 보다 먼저 로드 -->
-<script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore-compat.js"></script>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+/* =========================================
+   CSS VARIABLES
+========================================= */
+:root{
+  --bg:#0d0f17;--bg2:#141720;--surface:#1e2235;--surface2:#252a3d;
+  --border:rgba(255,255,255,0.07);
+  --accent:#00d4ff;--accent2:#7c3aed;--accent3:#f59e0b;
+  --green:#10b981;--red:#ef4444;
+  --text:#e8eaf0;--text2:#8b90a8;--text3:#5a5f78;
+  --shadow:0 8px 32px rgba(0,0,0,0.4);
+  --glow:0 0 20px rgba(0,212,255,0.15);
+  --r:14px;
+  --fd:'Rajdhani',sans-serif;
+  --fb:'Noto Sans KR',sans-serif;
+  --t:all .25s cubic-bezier(.4,0,.2,1);
+}
+[data-theme="light"]{
+  --bg:#f0f2f8;--bg2:#e8eaf0;--surface:#fff;--surface2:#f5f6fc;
+  --border:rgba(0,0,0,0.08);
+  --text:#1a1d2e;--text2:#5a5f78;--text3:#9095b0;
+  --shadow:0 4px 20px rgba(0,0,0,0.08);
+  --glow:0 0 20px rgba(0,212,255,0.06);
+}
+
+/* =========================================
+   RESET
+========================================= */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);min-height:100vh;transition:background .3s,color .3s;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(124,58,237,.06) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(0,212,255,.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+img{display:block;max-width:100%;}
+button{font-family:var(--fb);cursor:pointer;}
+a{text-decoration:none;color:inherit;}
+
+/* =========================================
+   PAGE SYSTEM
+========================================= */
+.page{display:none;}
+.page.active{display:block;}
+
+/* =========================================
+   NAVBAR
+========================================= */
+.navbar{
+  position:sticky;top:0;z-index:200;
+  display:flex;align-items:center;gap:16px;
+  padding:0 36px;height:62px;
+  background:rgba(13,15,23,.92);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+[data-theme="light"] .navbar{background:rgba(240,242,248,.94);}
+
+.nav-left{display:flex;align-items:center;gap:28px;flex-shrink:0;}
+.logo{display:flex;align-items:center;gap:8px;font-family:var(--fd);font-size:22px;font-weight:700;color:var(--text);white-space:nowrap;}
+.logo-icon{color:var(--accent);animation:blink 3s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
+.logo-accent{color:var(--accent);}
+.nav-links{display:flex;gap:2px;}
+.nav-link{padding:6px 13px;border-radius:8px;font-size:14px;font-weight:500;color:var(--text2);cursor:pointer;transition:var(--t);}
+.nav-link:hover,.nav-link.active{color:var(--text);background:var(--surface);}
+
+.search-box{flex:1;max-width:460px;position:relative;display:flex;align-items:center;}
+.search-icon{position:absolute;left:14px;font-size:13px;opacity:.45;pointer-events:none;}
+.search-box input{width:100%;padding:9px 16px 9px 38px;border-radius:40px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:var(--fb);font-size:13px;outline:none;transition:var(--t);}
+.search-box input::placeholder{color:var(--text3);}
+.search-box input:focus{border-color:rgba(0,212,255,.4);box-shadow:var(--glow);}
+
+.nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto;}
+
+.btn-login{padding:7px 18px;border-radius:40px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:13px;font-weight:600;transition:var(--t);white-space:nowrap;}
+.btn-login:hover{background:var(--accent);color:#000;}
+
+/* user menu — JS toggles display */
+.user-menu{display:none;align-items:center;gap:8px;}
+.user-menu.visible{display:flex;}
+
+.avatar{width:32px;height:32px;border-radius:50%;border:2px solid var(--accent);object-fit:cover;flex-shrink:0;}
+.user-text{display:flex;flex-direction:column;line-height:1.25;}
+.user-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;}
+.user-role-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;letter-spacing:.04em;display:none;}
+.user-role-badge.show{display:inline-block;}
+.role-admin{background:rgba(245,158,11,.18);color:var(--accent3);}
+.role-member{background:rgba(0,212,255,.12);color:var(--accent);}
+
+.btn-nick-edit{padding:4px 9px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:14px;transition:var(--t);}
+.btn-nick-edit:hover{border-color:var(--accent);color:var(--accent);}
+
+.btn-admin-nav{display:none;align-items:center;gap:5px;padding:6px 13px;border-radius:40px;border:1px solid var(--accent3);background:rgba(245,158,11,.1);color:var(--accent3);font-size:12px;font-weight:700;transition:var(--t);white-space:nowrap;}
+.btn-admin-nav.show{display:inline-flex;}
+.btn-admin-nav:hover{background:var(--accent3);color:#000;}
+
+.btn-logout{padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;transition:var(--t);white-space:nowrap;}
+.btn-logout:hover{border-color:var(--red);color:var(--red);}
+
+.theme-toggle{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--surface);font-size:16px;display:flex;align-items:center;justify-content:center;transition:var(--t);flex-shrink:0;}
+.theme-toggle:hover{border-color:var(--accent);}
+
+/* =========================================
+   PAGE HERO
+========================================= */
+.page-hero{position:relative;width:100%;height:200px;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;}
+.assets-hero{background-image:url('https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1400');}
+.news-hero{background-image:url('https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1400');}
+.page-hero-overlay{position:absolute;inset:0;background:rgba(10,12,20,.72);}
+.page-hero-content{position:relative;z-index:1;text-align:center;}
+.page-hero-content h1{font-family:var(--fd);font-size:34px;font-weight:700;color:#fff;margin-bottom:8px;}
+.page-hero-content p{font-size:14px;color:rgba(255,255,255,.7);}
+
+/* =========================================
+   HERO SLIDER
+========================================= */
+.hero-slider{position:relative;width:92%;max-width:1400px;margin:28px auto;border-radius:20px;overflow:hidden;height:430px;}
+.slides-wrapper{display:flex;height:100%;transition:transform .6s cubic-bezier(.4,0,.2,1);}
+.slide{min-width:100%;height:100%;position:relative;background-size:cover;background-position:center;}
+.slide-1{background-image:url('https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=1400');}
+.slide-2{background-image:url('https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1400');}
+.slide-3{background-image:url('https://images.unsplash.com/photo-1608889825103-eb5ed706fc64?q=80&w=1400');}
+.slide-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(10,12,20,.88) 0%,rgba(10,12,20,.35) 55%,rgba(10,12,20,.65) 100%);}
+.slide-content{position:absolute;bottom:68px;left:56px;max-width:500px;animation:sup .7s ease;}
+@keyframes sup{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.slide-badge{display:inline-block;padding:5px 13px;border-radius:20px;background:rgba(0,212,255,.15);border:1px solid rgba(0,212,255,.3);color:var(--accent);font-size:12px;font-weight:600;letter-spacing:.05em;margin-bottom:12px;}
+.slide-content h1{font-family:var(--fd);font-size:36px;font-weight:700;line-height:1.22;color:#fff;margin-bottom:10px;text-shadow:0 2px 20px rgba(0,0,0,.5);}
+.slide-content p{font-size:14px;color:rgba(255,255,255,.76);margin-bottom:22px;}
+.btn-hero{padding:11px 26px;border-radius:40px;border:2px solid #fff;background:rgba(255,255,255,.1);backdrop-filter:blur(10px);color:#fff;font-family:var(--fd);font-size:15px;font-weight:600;letter-spacing:.04em;transition:var(--t);}
+.btn-hero:hover{background:#fff;color:#0d0f17;}
+.slider-dots{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:7px;}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.38);cursor:pointer;transition:var(--t);}
+.dot.active{width:24px;border-radius:4px;background:#fff;}
+.slider-arrow{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.2);color:#fff;width:42px;height:42px;border-radius:50%;font-size:22px;display:flex;align-items:center;justify-content:center;transition:var(--t);z-index:2;}
+.slider-arrow.left{left:16px;}.slider-arrow.right{right:16px;}
+.slider-arrow:hover{background:rgba(255,255,255,.26);}
+
+/* =========================================
+   CATEGORY BAR
+========================================= */
+.category-bar{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;padding:0 32px 26px;}
+.cat-btn{display:flex;align-items:center;gap:5px;padding:8px 16px;border-radius:40px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:13px;font-weight:500;transition:var(--t);white-space:nowrap;}
+.cat-btn:hover{border-color:rgba(0,212,255,.4);color:var(--accent);}
+.cat-btn.active{background:linear-gradient(135deg,rgba(0,212,255,.13),rgba(124,58,237,.13));border-color:var(--accent);color:var(--accent);box-shadow:var(--glow);}
+
+/* =========================================
+   CONTAINER / SECTION
+========================================= */
+.container{max-width:1400px;margin:0 auto 48px;padding:0 32px;position:relative;z-index:1;}
+.top-section{margin-bottom:6px;}
+.section-header{display:flex;align-items:flex-start;gap:13px;margin-bottom:20px;}
+.section-bar{width:4px;height:42px;border-radius:2px;flex-shrink:0;margin-top:2px;background:linear-gradient(180deg,var(--accent),var(--accent2));}
+.section-title{font-family:var(--fd);font-size:22px;font-weight:700;letter-spacing:.03em;}
+.section-sub{font-size:13px;color:var(--text3);margin-top:3px;}
+
+/* =========================================
+   TOP 4
+========================================= */
+.top4-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;}
+.top4-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:var(--t);}
+.top4-card:hover{border-color:rgba(0,212,255,.3);transform:translateY(-3px);box-shadow:var(--shadow),var(--glow);}
+.top4-rank{font-family:var(--fd);font-size:26px;font-weight:700;color:var(--text3);flex-shrink:0;width:28px;text-align:center;}
+.rank-1{color:#f59e0b;}.rank-2{color:#94a3b8;}.rank-3{color:#cd7c37;}
+.top4-img{width:48px;height:48px;border-radius:9px;object-fit:cover;flex-shrink:0;background:var(--surface2);}
+.top4-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.top4-price{font-size:12px;color:var(--accent);font-weight:600;margin-top:3px;}
+.top4-sales{font-size:11px;color:var(--text3);margin-top:2px;}
+
+/* =========================================
+   PRODUCT GRID / CARD
+========================================= */
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:var(--t);position:relative;}
+.card:hover{transform:translateY(-5px);border-color:rgba(0,212,255,.25);box-shadow:var(--shadow),var(--glow);}
+.card-img{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:var(--surface2);}
+.card-img img{width:100%;height:100%;object-fit:cover;transition:transform .4s ease;}
+.card:hover .card-img img{transform:scale(1.05);}
+.cat-tag{position:absolute;top:9px;left:9px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:rgba(0,0,0,.64);backdrop-filter:blur(4px);color:var(--accent);border:1px solid rgba(0,212,255,.25);}
+.free-tag{position:absolute;top:9px;right:9px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(16,185,129,.88);color:#fff;}
+.card-body{padding:13px 14px;}
+.card-name{font-size:13.5px;font-weight:600;margin-bottom:5px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.card-desc{font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.card-footer{display:flex;align-items:center;justify-content:space-between;padding-top:9px;border-top:1px solid var(--border);}
+.card-price{font-family:var(--fd);font-size:16px;font-weight:700;color:var(--accent);}
+.card-price.fp{color:var(--green);}
+.card-sales{font-size:11px;color:var(--text3);}
+.btn-card-buy{padding:5px 12px;border-radius:20px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:11px;font-weight:600;transition:var(--t);}
+.btn-card-buy:hover{background:var(--accent);color:#000;}
+.del-btn{position:absolute;top:9px;right:9px;background:rgba(239,68,68,.86);color:#fff;border:none;border-radius:6px;padding:4px 9px;font-size:11px;cursor:pointer;backdrop-filter:blur(4px);z-index:5;}
+
+.empty{text-align:center;padding:56px 20px;color:var(--text3);}
+.empty-icon{font-size:46px;margin-bottom:11px;}
+
+/* =========================================
+   NEWS GRID
+========================================= */
+.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:20px;}
+.news-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:var(--t);}
+.news-card:hover{transform:translateY(-4px);border-color:rgba(0,212,255,.25);box-shadow:var(--shadow),var(--glow);}
+.news-card-img{width:100%;aspect-ratio:16/9;object-fit:cover;background:var(--surface2);}
+.news-card-body{padding:14px 16px;}
+.news-date{font-size:11px;color:var(--text3);margin-bottom:6px;}
+.news-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.news-excerpt{font-size:12px;color:var(--text2);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.news-card-footer{display:flex;justify-content:flex-end;padding:9px 16px;border-top:1px solid var(--border);}
+.news-del-btn{padding:4px 11px;border-radius:7px;border:none;background:rgba(239,68,68,.12);color:var(--red);font-size:11px;cursor:pointer;transition:var(--t);}
+.news-del-btn:hover{background:var(--red);color:#fff;}
+
+/* =========================================
+   DETAIL PANEL (right slide)
+========================================= */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.54);backdrop-filter:blur(3px);z-index:300;opacity:0;pointer-events:none;transition:opacity .3s;}
+.overlay.on{opacity:1;pointer-events:all;}
+.detail-panel{position:fixed;top:0;right:-450px;width:430px;height:100vh;background:var(--bg2);border-left:1px solid var(--border);z-index:301;overflow-y:auto;transition:right .35s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;}
+.detail-panel.on{right:0;}
+.panel-close{position:absolute;top:13px;right:13px;z-index:5;width:31px;height:31px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:14px;display:flex;align-items:center;justify-content:center;transition:var(--t);}
+.panel-close:hover{border-color:var(--red);color:var(--red);}
+.panel-img{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:var(--surface2);flex-shrink:0;}
+.panel-img img{width:100%;height:100%;object-fit:cover;}
+.panel-cat{position:absolute;bottom:11px;left:11px;padding:4px 11px;border-radius:20px;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);color:var(--accent);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;border:1px solid rgba(0,212,255,.3);}
+.panel-body{padding:22px;flex:1;}
+.panel-body h2{font-family:var(--fd);font-size:22px;font-weight:700;margin-bottom:10px;line-height:1.3;}
+.panel-desc{font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:16px;}
+.panel-price-row{display:flex;align-items:baseline;gap:11px;margin-bottom:16px;}
+.panel-price{font-family:var(--fd);font-size:28px;font-weight:700;color:var(--accent);}
+.panel-sales{font-size:13px;color:var(--text3);}
+.panel-divider{height:1px;background:var(--border);margin-bottom:16px;}
+.btn-panel-buy{width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:15px;font-weight:700;transition:var(--t);}
+.btn-panel-buy:hover{opacity:.88;transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,212,255,.25);}
+
+/* =========================================
+   MODAL
+========================================= */
+.modal{display:none;position:fixed;inset:0;z-index:400;align-items:center;justify-content:center;}
+.modal.on{display:flex;}
+.modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);}
+.modal-box{position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:20px;width:450px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.6);animation:mpop .28s cubic-bezier(.34,1.56,.64,1);}
+@keyframes mpop{from{opacity:0;transform:scale(.91) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-close{position:absolute;top:13px;right:13px;width:31px;height:31px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:14px;display:flex;align-items:center;justify-content:center;transition:var(--t);z-index:2;}
+.modal-close:hover{border-color:var(--red);color:var(--red);}
+.modal-body{padding:26px;}
+.modal-title{font-family:var(--fd);font-size:20px;font-weight:700;margin-bottom:14px;}
+.divider{height:1px;background:var(--border);margin:13px 0;}
+.lbl{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;}
+.lbl-note{font-weight:400;font-size:11px;text-transform:none;letter-spacing:0;}
+.inp{width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:var(--fb);font-size:13.5px;outline:none;margin-bottom:9px;transition:var(--t);}
+.inp::placeholder{color:var(--text3);}
+.inp:focus{border-color:rgba(0,212,255,.4);box-shadow:var(--glow);}
+.inp-ta{resize:vertical;min-height:76px;font-family:var(--fb);}
+.inp-sel{appearance:none;cursor:pointer;}
+.btn-main{width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:14px;font-weight:700;transition:var(--t);}
+.btn-main:hover{opacity:.88;transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,212,255,.25);}
+.btn-main:disabled{opacity:.46;cursor:not-allowed;transform:none;}
+
+/* Purchase modal */
+.purchase-info{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-radius:10px;padding:11px 14px;margin-bottom:0;}
+.purchase-name{font-size:14px;font-weight:600;}
+.purchase-price{font-family:var(--fd);font-size:18px;font-weight:700;color:var(--accent);}
+.or-line{display:flex;align-items:center;gap:10px;color:var(--text3);font-size:12px;margin:3px 0;}
+.or-line::before,.or-line::after{content:'';flex:1;height:1px;background:var(--border);}
+.purchase-note{font-size:12px;color:var(--text3);text-align:center;margin-top:12px;line-height:1.6;}
+
+/* News modal */
+.news-modal-box{width:560px;}
+.news-modal-img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:20px 20px 0 0;background:var(--surface2);}
+.nm-date{font-size:12px;color:var(--text3);margin-bottom:6px;}
+.nm-title{font-family:var(--fd);font-size:22px;font-weight:700;margin-bottom:11px;line-height:1.3;}
+.nm-body{font-size:14px;color:var(--text2);line-height:1.8;white-space:pre-wrap;}
+
+/* Nick modal */
+.nick-note{font-size:12px;color:var(--text3);line-height:1.6;margin-bottom:12px;}
+
+/* =========================================
+   ADMIN PANEL
+========================================= */
+.admin-box{width:620px;max-width:95vw;}
+.admin-hdr{padding:20px 24px 0;}
+.admin-badge-lbl{display:inline-block;padding:4px 13px;border-radius:20px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--accent3);font-size:12px;font-weight:700;letter-spacing:.05em;}
+.admin-tabs{display:flex;flex-wrap:wrap;gap:2px;padding:13px 24px 0;border-bottom:1px solid var(--border);}
+.a-tab{padding:8px 14px;border-radius:9px 9px 0 0;border:none;background:transparent;color:var(--text3);font-size:13px;font-weight:600;transition:var(--t);border-bottom:2px solid transparent;margin-bottom:-1px;}
+.a-tab:hover{color:var(--text2);}
+.a-tab.on{color:var(--accent);border-bottom-color:var(--accent);}
+.a-content{display:none;padding:20px 24px;}
+.a-content.on{display:block;}
+.a-form{display:flex;flex-direction:column;gap:2px;}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:5px;}
+.fl{font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.04em;}
+.fhint{font-size:11px;font-weight:400;color:var(--text3);}
+.freq{color:var(--red);}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+.img-preview{margin-top:6px;border-radius:10px;overflow:hidden;border:1px solid var(--border);max-height:160px;}
+.img-preview img{width:100%;object-fit:cover;max-height:160px;}
+
+/* Category checkboxes */
+.cat-cbs{display:flex;flex-wrap:wrap;gap:7px;margin-top:3px;}
+.cat-cb{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;cursor:pointer;transition:var(--t);user-select:none;}
+.cat-cb input{display:none;}
+.cat-cb:has(input:checked){border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,.1);}
+.cat-cb:hover{border-color:rgba(0,212,255,.4);color:var(--accent);}
+
+/* File upload */
+.file-zone{position:relative;border:2px dashed var(--border);border-radius:12px;overflow:hidden;transition:var(--t);}
+.file-zone:hover{border-color:rgba(0,212,255,.4);}
+.file-inp{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2;width:100%;height:100%;}
+.file-ui{padding:28px;text-align:center;}
+.file-icon{font-size:36px;margin-bottom:8px;}
+.file-txt{font-size:14px;font-weight:600;color:var(--text2);margin-bottom:3px;}
+.file-hint{font-size:12px;color:var(--text3);}
+.file-preview{position:relative;}
+.file-preview img{width:100%;max-height:180px;object-fit:cover;display:block;}
+.rm-img{position:absolute;top:7px;right:7px;background:rgba(239,68,68,.86);color:#fff;border:none;border-radius:6px;padding:4px 11px;font-size:12px;cursor:pointer;backdrop-filter:blur(4px);z-index:3;}
+
+/* Manage list */
+.manage-list{display:flex;flex-direction:column;gap:9px;max-height:480px;overflow-y:auto;}
+.m-item{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 14px;}
+.m-img{width:52px;height:36px;border-radius:7px;object-fit:cover;flex-shrink:0;background:var(--surface2);}
+.m-info{flex:1;overflow:hidden;}
+.m-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.m-meta{font-size:11px;color:var(--text3);margin-top:2px;}
+.btn-del-item{padding:5px 11px;border-radius:7px;border:1px solid var(--red);background:transparent;color:var(--red);font-size:11px;transition:var(--t);flex-shrink:0;}
+.btn-del-item:hover{background:var(--red);color:#fff;}
+
+/* Order list */
+.order-filters{display:flex;gap:7px;margin-bottom:13px;}
+.o-filter{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:12px;transition:var(--t);}
+.o-filter.on{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,.08);}
+.order-list{display:flex;flex-direction:column;gap:9px;max-height:440px;overflow-y:auto;}
+.o-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;}
+.o-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.o-product{font-weight:600;font-size:14px;}
+.o-status{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;}
+.o-status.pending{background:rgba(245,158,11,.14);color:var(--accent3);}
+.o-status.done{background:rgba(16,185,129,.14);color:var(--green);}
+.o-contact{font-size:13px;color:var(--text);font-weight:500;margin-bottom:3px;}
+.o-detail{font-size:12px;color:var(--text2);line-height:1.8;}
+.btn-done{margin-top:8px;padding:5px 13px;border-radius:7px;border:1px solid var(--green);background:transparent;color:var(--green);font-size:12px;transition:var(--t);}
+.btn-done:hover{background:var(--green);color:#000;}
+
+/* Status msg */
+.status-msg{margin-top:8px;font-size:13px;text-align:center;min-height:18px;}
+.status-msg.ok{color:var(--green);}
+.status-msg.err{color:var(--red);}
+.status-msg.loading{color:var(--accent);}
+
+/* =========================================
+   TOAST
+========================================= */
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--surface2);border:1px solid var(--border);border-radius:40px;padding:10px 24px;font-size:14px;color:var(--text);box-shadow:0 8px 32px rgba(0,0,0,.4);transition:transform .32s cubic-bezier(.4,0,.2,1);z-index:9999;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.ok{border-color:rgba(16,185,129,.4);}
+.toast.err{border-color:rgba(239,68,68,.4);}
+
+/* =========================================
+   SCROLLBAR
+========================================= */
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--text3);}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+@media(max-width:1100px){.top4-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:768px){
+  .navbar{padding:0 14px;gap:10px;}
+  .nav-links{display:none;}
+  .hero-slider{height:280px;margin:14px auto;}
+  .slide-content{left:20px;bottom:40px;}
+  .slide-content h1{font-size:22px;}
+  .container{padding:0 14px;}
+  .category-bar{padding:0 14px 18px;}
+  .top4-grid{grid-template-columns:1fr;}
+  .detail-panel{width:100%;right:-100%;}
+  .admin-box{width:95vw;}
+  .frow{grid-template-columns:1fr;}
+  .news-modal-box{width:95vw;}
+}
+</style>
 </head>
 <body>
 
-<!-- ===== NAVBAR ===== -->
+<!-- NAVBAR -->
 <header class="navbar">
   <div class="nav-left">
     <div class="logo">
@@ -22,41 +398,36 @@
       <span class="logo-text">RS<span class="logo-accent">Store</span></span>
     </div>
     <nav class="nav-links">
-      <a href="#" class="nav-link active" data-page="store">스토어</a>
-      <a href="#" class="nav-link" data-page="assets">에셋</a>
-      <a href="#" class="nav-link" data-page="news">뉴스</a>
+      <span class="nav-link active" data-page="store">스토어</span>
+      <span class="nav-link" data-page="assets">에셋</span>
+      <span class="nav-link" data-page="news">뉴스</span>
     </nav>
   </div>
-  <div class="search-box"> 
+  <div class="search-box">
     <span class="search-icon">🔍</span>
     <input id="searchInput" placeholder="에셋, 플러그인, 스크립트를 검색하세요…">
   </div>
-  <div class="nav-right" id="navRight">
-    <button type="button" id="loginBtn" class="btn-login">로그인</button>
+  <div class="nav-right">
+    <button id="loginBtn" class="btn-login">로그인</button>
     <div id="userMenu" class="user-menu">
       <img id="userAvatar" src="" class="avatar" alt="">
       <div class="user-text">
         <span id="userName" class="user-name"></span>
         <span id="userRoleBadge" class="user-role-badge"></span>
       </div>
-      <button type="button" id="editNickBtn" class="btn-nick-edit" title="닉네임 변경">✎</button>
-      <button type="button" id="adminPanelBtn" class="btn-admin-nav">⚙ 관리자</button>
-      <button type="button" id="logoutBtn" class="btn-logout">로그아웃</button>
+      <button id="editNickBtn" class="btn-nick-edit" title="닉네임 변경">✎</button>
+      <button id="adminPanelBtn" class="btn-admin-nav">⚙ 관리자</button>
+      <button id="logoutBtn" class="btn-logout">로그아웃</button>
     </div>
-    <button type="button" class="theme-toggle" id="themeToggle">🌙</button>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
   </div>
 </header>
 
-<!-- ===================================================
-     PAGE: 스토어 (홈)
-=================================================== -->
+<!-- PAGE: 스토어 -->
 <div id="page-store" class="page active">
-
-  <!-- 히어로 슬라이더 -->
   <section class="hero-slider">
     <div class="slides-wrapper" id="slidesWrapper">
-      <div class="slide slide-1">
-        <div class="slide-overlay"></div>
+      <div class="slide slide-1"><div class="slide-overlay"></div>
         <div class="slide-content">
           <div class="slide-badge">🔥 신규 에셋</div>
           <h1>최고의 로블록스 스튜디오<br>에셋을 지금 만나보세요</h1>
@@ -64,8 +435,7 @@
           <button class="btn-hero" onclick="document.querySelector('.container').scrollIntoView({behavior:'smooth'})">둘러보기 →</button>
         </div>
       </div>
-      <div class="slide slide-2">
-        <div class="slide-overlay"></div>
+      <div class="slide slide-2"><div class="slide-overlay"></div>
         <div class="slide-content">
           <div class="slide-badge">✨ 무료 에셋</div>
           <h1>크리에이터를 위한<br>무료 리소스 컬렉션</h1>
@@ -73,8 +443,7 @@
           <button class="btn-hero" onclick="setFilter('free')">무료 에셋 보기 →</button>
         </div>
       </div>
-      <div class="slide slide-3">
-        <div class="slide-overlay"></div>
+      <div class="slide slide-3"><div class="slide-overlay"></div>
         <div class="slide-content">
           <div class="slide-badge">💎 프리미엄</div>
           <h1>당신의 게임을<br>한 단계 업그레이드</h1>
@@ -92,296 +461,214 @@
     <button class="slider-arrow right" onclick="nextSlide()">›</button>
   </section>
 
-  <!-- 카테고리 바 -->
   <section class="category-bar">
-    <button type="button" class="cat-btn active" data-filter="all"><span>⊞</span> 전체</button>
-    <button type="button" class="cat-btn" data-filter="popular"><span>🔥</span> 인기</button>
-    <button type="button" class="cat-btn" data-filter="free"><span>🎁</span> 무료</button>
-    <button type="button" class="cat-btn" data-filter="lowprice"><span>↓</span> 낮은 가격순</button>
-    <button type="button" class="cat-btn" data-filter="highprice"><span>↑</span> 높은 가격순</button>
-    <button type="button" class="cat-btn" data-filter="script"><span>📜</span> 스크립트</button>
-    <button type="button" class="cat-btn" data-filter="plugin"><span>🔧</span> 플러그인</button>
-    <button type="button" class="cat-btn" data-filter="map"><span>🗺</span> 맵</button>
-    <button type="button" class="cat-btn" data-filter="ui"><span>🖼</span> UI</button>
+    <button class="cat-btn active" data-filter="all">⊞ 전체</button>
+    <button class="cat-btn" data-filter="popular">🔥 인기</button>
+    <button class="cat-btn" data-filter="free">🎁 무료</button>
+    <button class="cat-btn" data-filter="lowprice">↓ 낮은 가격순</button>
+    <button class="cat-btn" data-filter="highprice">↑ 높은 가격순</button>
+    <button class="cat-btn" data-filter="script">📜 스크립트</button>
+    <button class="cat-btn" data-filter="plugin">🔧 플러그인</button>
+    <button class="cat-btn" data-filter="map">🗺 맵</button>
+    <button class="cat-btn" data-filter="ui">🖼 UI</button>
   </section>
 
-  <!-- TOP 4 -->
   <section class="top-section container">
     <div class="section-header">
-      <div class="section-title-bar"></div>
-      <div>
-        <h2 class="section-title">🔥 인기 에셋 Top 4</h2>
-        <p class="section-sub">가장 많이 구매된 에셋이에요.</p>
-      </div>
+      <div class="section-bar"></div>
+      <div><h2 class="section-title">🔥 인기 에셋 Top 4</h2><p class="section-sub">가장 많이 구매된 에셋이에요.</p></div>
     </div>
     <div class="top4-grid" id="top4Grid"></div>
   </section>
 
-  <!-- 상품 그리드 -->
   <main class="container">
     <div class="section-header">
-      <div class="section-title-bar"></div>
-      <div>
-        <h2 class="section-title" id="gridTitle">전체 에셋</h2>
-        <p class="section-sub" id="gridCount"></p>
-      </div>
+      <div class="section-bar"></div>
+      <div><h2 class="section-title" id="gridTitle">전체 에셋</h2><p class="section-sub" id="gridCount"></p></div>
     </div>
     <div class="product-grid" id="productGrid"></div>
-    <div class="empty-state" id="emptyState" style="display:none;">
-      <div class="empty-icon">🔍</div>
-      <p>검색 결과가 없어요</p>
-    </div>
+    <div class="empty" id="emptyState" style="display:none;"><div class="empty-icon">🔍</div><p>검색 결과가 없어요</p></div>
   </main>
 </div>
 
-<!-- ===================================================
-     PAGE: 에셋 (전체 상품)
-=================================================== -->
+<!-- PAGE: 에셋 -->
 <div id="page-assets" class="page">
-  <div class="page-hero assets-hero">
-    <div class="page-hero-overlay"></div>
-    <div class="page-hero-content">
-      <h1>에셋 전체 목록</h1>
-      <p>등록된 모든 에셋을 한눈에 확인하세요</p>
-    </div>
+  <div class="page-hero assets-hero"><div class="page-hero-overlay"></div>
+    <div class="page-hero-content"><h1>에셋 전체 목록</h1><p>등록된 모든 에셋을 한눈에 확인하세요</p></div>
   </div>
   <main class="container" style="margin-top:32px;">
     <div class="section-header">
-      <div class="section-title-bar"></div>
-      <div>
-        <h2 class="section-title">전체 에셋</h2>
-        <p class="section-sub" id="assetsCount"></p>
-      </div>
+      <div class="section-bar"></div>
+      <div><h2 class="section-title">전체 에셋</h2><p class="section-sub" id="assetsCount"></p></div>
     </div>
     <div class="product-grid" id="assetsGrid"></div>
-    <div class="empty-state" id="assetsEmpty" style="display:none;">
-      <div class="empty-icon">📦</div>
-      <p>등록된 에셋이 없어요</p>
-    </div>
+    <div class="empty" id="assetsEmpty" style="display:none;"><div class="empty-icon">📦</div><p>등록된 에셋이 없어요</p></div>
   </main>
 </div>
 
-<!-- ===================================================
-     PAGE: 뉴스
-=================================================== -->
+<!-- PAGE: 뉴스 -->
 <div id="page-news" class="page">
-  <div class="page-hero news-hero">
-    <div class="page-hero-overlay"></div>
-    <div class="page-hero-content">
-      <h1>뉴스 & 공지</h1>
-      <p>로블록스 스튜디오 스토어의 최신 소식을 확인하세요</p>
-    </div>
+  <div class="page-hero news-hero"><div class="page-hero-overlay"></div>
+    <div class="page-hero-content"><h1>뉴스 & 공지</h1><p>로블록스 스튜디오 스토어의 최신 소식을 확인하세요</p></div>
   </div>
   <main class="container" style="margin-top:32px;">
     <div class="section-header">
-      <div class="section-title-bar"></div>
-      <div>
-        <h2 class="section-title">최신 뉴스</h2>
-        <p class="section-sub" id="newsCount"></p>
-      </div>
+      <div class="section-bar"></div>
+      <div><h2 class="section-title">최신 뉴스</h2><p class="section-sub" id="newsCount"></p></div>
     </div>
     <div class="news-grid" id="newsGrid"></div>
-    <div class="empty-state" id="newsEmpty" style="display:none;">
-      <div class="empty-icon">📰</div>
-      <p>뉴스가 없어요</p>
-    </div>
+    <div class="empty" id="newsEmpty" style="display:none;"><div class="empty-icon">📰</div><p>뉴스가 없어요</p></div>
   </main>
 </div>
 
-<!-- ===================================================
-     상품 상세 슬라이드 패널 (오른쪽)
-=================================================== -->
-<div id="detailOverlay" class="detail-overlay" onclick="closeDetail()"></div>
+<!-- DETAIL PANEL -->
+<div id="overlay" class="overlay" onclick="closeDetail()"></div>
 <aside id="detailPanel" class="detail-panel">
-  <button class="detail-close" onclick="closeDetail()">✕</button>
-  <div class="detail-img-wrap">
-    <img id="detailImage" src="" alt="">
-    <span id="detailCatBadge" class="detail-cat-badge"></span>
-  </div>
-  <div class="detail-body">
-    <h2 id="detailName"></h2>
-    <p id="detailDesc" class="detail-desc"></p>
-    <div class="detail-price-row">
-      <span id="detailPrice" class="detail-price"></span>
-      <span id="detailSales" class="detail-sales"></span>
-    </div>
-    <div class="detail-divider"></div>
-    <button type="button" id="detailBuyBtn" class="btn-detail-buy">🛒 구매하기</button>
+  <button class="panel-close" onclick="closeDetail()">✕</button>
+  <div class="panel-img"><img id="dImg" src="" alt=""><span id="dCat" class="panel-cat"></span></div>
+  <div class="panel-body">
+    <h2 id="dName"></h2>
+    <p id="dDesc" class="panel-desc"></p>
+    <div class="panel-price-row"><span id="dPrice" class="panel-price"></span><span id="dSales" class="panel-sales"></span></div>
+    <div class="panel-divider"></div>
+    <button id="dBuyBtn" class="btn-panel-buy">🛒 구매하기</button>
   </div>
 </aside>
 
-<!-- ===================================================
-     뉴스 상세 모달
-=================================================== -->
+<!-- NEWS MODAL -->
 <div id="newsModal" class="modal">
-  <div class="modal-backdrop" onclick="closeModal('newsModal')"></div>
-  <div class="modal-content news-detail-content">
-    <button class="modal-close" onclick="closeModal('newsModal')">✕</button>
-    <img id="newsModalImage" src="" alt="" class="news-modal-img">
+  <div class="modal-bg" onclick="closeM('newsModal')"></div>
+  <div class="modal-box news-modal-box">
+    <button class="modal-close" onclick="closeM('newsModal')">✕</button>
+    <img id="nmImg" class="news-modal-img" src="" alt="">
     <div class="modal-body">
-      <div class="news-modal-meta">
-        <span id="newsModalDate" class="news-modal-date"></span>
-      </div>
-      <h2 id="newsModalTitle" class="news-modal-title"></h2>
-      <p id="newsModalBody" class="news-modal-body"></p>
+      <div class="nm-date" id="nmDate"></div>
+      <div class="nm-title" id="nmTitle"></div>
+      <p class="nm-body" id="nmBody"></p>
     </div>
   </div>
 </div>
 
-<!-- ===================================================
-     구매 모달
-=================================================== -->
+<!-- PURCHASE MODAL -->
 <div id="purchaseModal" class="modal">
-  <div class="modal-backdrop" onclick="closeModal('purchaseModal')"></div>
-  <div class="modal-content purchase-modal-content">
-    <button class="modal-close" onclick="closeModal('purchaseModal')">✕</button>
+  <div class="modal-bg" onclick="closeM('purchaseModal')"></div>
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeM('purchaseModal')">✕</button>
     <div class="modal-body">
-      <h3 class="purchase-modal-title">구매 요청</h3>
-      <div class="purchase-product-info">
-        <span id="purchaseProductName" class="purchase-product-name"></span>
-        <span id="purchasePrice" class="purchase-price-tag"></span>
+      <div class="modal-title">구매 요청</div>
+      <div class="purchase-info">
+        <span class="purchase-name" id="pName"></span>
+        <span class="purchase-price" id="pPrice"></span>
       </div>
-      <div class="modal-divider"></div>
-      <p class="modal-label">연락처 입력 <span class="label-note">(하나만 입력하면 돼요)</span></p>
-      <input id="buyerDiscord" placeholder="💬 디스코드 ID  (예: username 또는 user#1234)" class="modal-input">
-      <div class="or-divider"><span>또는</span></div>
-      <input id="buyerPhone" placeholder="📱 전화번호" class="modal-input">
-      <button type="button" id="modalBuy" class="btn-buy">✅ 구매 요청하기</button>
+      <div class="divider"></div>
+      <div class="lbl">연락처 입력 <span class="lbl-note">(하나만 입력하면 돼요)</span></div>
+      <input id="buyDiscord" class="inp" placeholder="💬 디스코드 ID (예: username 또는 user#1234)">
+      <div class="or-line"><span>또는</span></div>
+      <input id="buyPhone" class="inp" placeholder="📱 전화번호">
+      <button id="buyBtn" class="btn-main">✅ 구매 요청하기</button>
       <p class="purchase-note">💡 실제 결제가 발생하지 않아요. 입력한 연락처로 에셋을 전달해드려요.</p>
     </div>
   </div>
 </div>
 
-<!-- 닉네임 설정 (구글 로그인 직후 / 닉네임 변경) -->
+<!-- NICK MODAL -->
 <div id="nickModal" class="modal">
-  <div class="modal-backdrop" id="nickModalBackdrop"></div>
-  <div class="modal-content purchase-modal-content">
+  <div class="modal-bg" id="nickBg"></div>
+  <div class="modal-box">
     <div class="modal-body">
-      <h3 class="purchase-modal-title">닉네임 설정</h3>
-      <p class="purchase-note" style="margin-bottom:12px;text-align:left;">스토어에 표시될 이름이에요. 같은 구글 계정으로 다시 들어오면 이 브라우저에 저장된 닉네임이 그대로 적용돼요.</p>
-      <input id="nickInput" class="modal-input" maxlength="24" placeholder="닉네임 (2~24자)" autocomplete="nickname">
-      <button type="button" id="nickSaveBtn" class="btn-buy" style="margin-top:10px;">저장하고 시작하기</button>
-      <p id="nickModalHint" class="upload-status error" style="margin-top:8px;min-height:0;"></p>
+      <div class="modal-title">닉네임 설정</div>
+      <p class="nick-note">스토어에 표시될 이름이에요. 같은 구글 계정으로 다시 들어오면 저장된 닉네임이 그대로 적용돼요.</p>
+      <input id="nickInp" class="inp" maxlength="24" placeholder="닉네임 (2~24자)">
+      <button id="nickSave" class="btn-main" style="margin-top:8px;">저장하고 시작하기</button>
+      <div id="nickHint" class="status-msg err" style="margin-top:6px;"></div>
     </div>
   </div>
 </div>
 
-<!-- ===================================================
-     관리자 패널
-=================================================== -->
+<!-- ADMIN PANEL -->
 <div id="adminPanel" class="modal">
-  <div class="modal-backdrop" onclick="closeModal('adminPanel')"></div>
-  <div class="modal-content admin-panel-content">
-    <button class="modal-close" onclick="closeModal('adminPanel')">✕</button>
-    <div class="admin-header">
-      <span class="admin-badge">⚙ 관리자 패널</span>
-    </div>
-
-    <!-- 탭 버튼 -->
+  <div class="modal-bg" onclick="closeM('adminPanel')"></div>
+  <div class="modal-box admin-box">
+    <button class="modal-close" onclick="closeM('adminPanel')">✕</button>
+    <div class="admin-hdr"><span class="admin-badge-lbl">⚙ 관리자 패널</span></div>
     <div class="admin-tabs">
-      <button type="button" class="admin-tab active" data-tab="addProduct">📦 상품 추가</button>
-      <button type="button" class="admin-tab" data-tab="manageProduct">🗂 상품 관리</button>
-      <button type="button" class="admin-tab" data-tab="orderList">📋 구매 목록</button>
-      <button type="button" class="admin-tab" data-tab="addNews">📰 뉴스 추가</button>
+      <button class="a-tab on" data-tab="addProduct">📦 상품 추가</button>
+      <button class="a-tab" data-tab="manageProduct">🗂 상품 관리</button>
+      <button class="a-tab" data-tab="orderList">📋 구매 목록</button>
+      <button class="a-tab" data-tab="addNews">📰 뉴스 추가</button>
     </div>
 
-    <!-- 상품 추가 탭 -->
-    <div id="tab-addProduct" class="admin-tab-content active">
-      <div class="admin-form">
-        <div class="form-group">
-          <label class="form-label">제목 <span class="required">*</span></label>
-          <input id="adminName" placeholder="상품 제목을 입력하세요" class="modal-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label">설명</label>
-          <textarea id="adminDesc" placeholder="상품 설명을 입력하세요" class="modal-input modal-textarea" rows="3"></textarea>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">가격 (₩) <span class="form-hint">0 = 무료</span></label>
-            <input id="adminPrice" type="number" min="0" placeholder="0" class="modal-input">
-          </div>
-          <div class="form-group">
-            <label class="form-label">카테고리 <span class="required">*</span> <span class="form-hint">(중복 선택 가능)</span></label>
-            <div class="cat-checkbox-group">
-              <label class="cat-checkbox"><input type="checkbox" value="script"> 📜 스크립트</label>
-              <label class="cat-checkbox"><input type="checkbox" value="plugin"> 🔧 플러그인</label>
-              <label class="cat-checkbox"><input type="checkbox" value="map"> 🗺 맵</label>
-              <label class="cat-checkbox"><input type="checkbox" value="ui"> 🖼 UI</label>
-              <label class="cat-checkbox"><input type="checkbox" value="free"> 🎁 무료</label>
+    <!-- 상품 추가 -->
+    <div id="tab-addProduct" class="a-content on">
+      <div class="a-form">
+        <div class="fg"><label class="fl">제목 <span class="freq">*</span></label><input id="adminName" class="inp" placeholder="상품 제목"></div>
+        <div class="fg"><label class="fl">설명</label><textarea id="adminDesc" class="inp inp-ta" rows="3" placeholder="상품 설명"></textarea></div>
+        <div class="frow">
+          <div class="fg"><label class="fl">가격 (₩) <span class="fhint">0=무료</span></label><input id="adminPrice" type="number" min="0" class="inp" placeholder="0"></div>
+          <div class="fg">
+            <label class="fl">카테고리 <span class="freq">*</span> <span class="fhint">(중복 가능)</span></label>
+            <div class="cat-cbs">
+              <label class="cat-cb"><input type="checkbox" value="script"> 📜 스크립트</label>
+              <label class="cat-cb"><input type="checkbox" value="plugin"> 🔧 플러그인</label>
+              <label class="cat-cb"><input type="checkbox" value="map"> 🗺 맵</label>
+              <label class="cat-cb"><input type="checkbox" value="ui"> 🖼 UI</label>
+              <label class="cat-cb"><input type="checkbox" value="free"> 🎁 무료</label>
             </div>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">이미지 URL</label>
-          <input id="adminImage" placeholder="https://... 이미지 주소를 입력하세요" class="modal-input">
-          <div id="imagePreview" class="image-preview" style="display:none;">
-            <img id="previewImg" src="" alt="미리보기">
-          </div>
+        <div class="fg">
+          <label class="fl">이미지 URL</label>
+          <input id="adminImage" class="inp" placeholder="https://...">
+          <div id="imgPreview" class="img-preview" style="display:none;"><img id="previewImg" src="" alt=""></div>
         </div>
-        <button type="button" id="adminUpload" class="btn-buy" style="margin-top:8px;">✅ 상품 등록하기</button>
-        <div id="uploadStatus" class="upload-status"></div>
+        <button id="adminUpload" class="btn-main" style="margin-top:6px;">✅ 상품 등록하기</button>
+        <div id="uploadStatus" class="status-msg"></div>
       </div>
     </div>
 
-    <!-- 상품 관리 탭 -->
-    <div id="tab-manageProduct" class="admin-tab-content">
-      <div id="manageProductList" class="manage-product-list">
-        <p style="color:var(--text3);text-align:center;padding:30px;">불러오는 중…</p>
-      </div>
+    <!-- 상품 관리 -->
+    <div id="tab-manageProduct" class="a-content">
+      <div id="manageList" class="manage-list"><p style="color:var(--text3);text-align:center;padding:28px;">불러오는 중…</p></div>
     </div>
 
-    <!-- 구매 목록 탭 -->
-    <div id="tab-orderList" class="admin-tab-content">
-      <div class="order-filter-row">
-        <button type="button" class="order-filter-btn active" data-status="all">전체</button>
-        <button type="button" class="order-filter-btn" data-status="pending">⏳ 대기 중</button>
-        <button type="button" class="order-filter-btn" data-status="done">✅ 완료</button>
+    <!-- 구매 목록 -->
+    <div id="tab-orderList" class="a-content">
+      <div class="order-filters">
+        <button class="o-filter on" data-status="all">전체</button>
+        <button class="o-filter" data-status="pending">⏳ 대기 중</button>
+        <button class="o-filter" data-status="done">✅ 완료</button>
       </div>
-      <div id="orderList" class="order-list">
-        <p style="color:var(--text3);text-align:center;padding:40px 0;">로딩 중…</p>
-      </div>
+      <div id="orderList" class="order-list"><p style="color:var(--text3);text-align:center;padding:36px;">로딩 중…</p></div>
     </div>
 
-    <!-- 뉴스 추가 탭 -->
-    <div id="tab-addNews" class="admin-tab-content">
-      <div class="admin-form">
-        <div class="form-group">
-          <label class="form-label">뉴스 제목 <span class="required">*</span></label>
-          <input id="newsTitle" placeholder="뉴스 제목을 입력하세요" class="modal-input">
-        </div>
-        <div class="form-group">
-          <label class="form-label">내용 <span class="required">*</span></label>
-          <textarea id="newsBody" placeholder="뉴스 내용을 입력하세요" class="modal-input modal-textarea" rows="5"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">이미지 URL (선택)</label>
-          <input id="newsImageLink" type="url" class="modal-input" placeholder="https://... (큰 이미지는 URL로 넣는 걸 추천)">
-        </div>
-        <div class="form-group">
-          <label class="form-label">이미지 파일 (선택, 작은 사진만 · Storage 없이 저장)</label>
-          <div class="file-upload-area" id="newsFileArea">
-            <input type="file" id="newsImageFile" accept="image/*" class="file-input">
-            <div class="file-upload-ui" id="newsFileUI">
-              <div class="file-upload-icon">🖼</div>
-              <p class="file-upload-text">클릭하거나 파일을 여기에 끌어다 놓으세요</p>
-              <p class="file-upload-hint">JPG, PNG, GIF, WEBP 지원</p>
+    <!-- 뉴스 추가 -->
+    <div id="tab-addNews" class="a-content">
+      <div class="a-form">
+        <div class="fg"><label class="fl">뉴스 제목 <span class="freq">*</span></label><input id="newsTitle" class="inp" placeholder="뉴스 제목"></div>
+        <div class="fg"><label class="fl">내용 <span class="freq">*</span></label><textarea id="newsBody" class="inp inp-ta" rows="5" placeholder="뉴스 내용"></textarea></div>
+        <div class="fg">
+          <label class="fl">이미지 파일 업로드</label>
+          <div class="file-zone" id="fileZone">
+            <input type="file" id="newsFile" accept="image/*" class="file-inp">
+            <div class="file-ui" id="fileUI">
+              <div class="file-icon">🖼</div>
+              <p class="file-txt">클릭하거나 파일을 여기에 끌어다 놓으세요</p>
+              <p class="file-hint">JPG, PNG, GIF, WEBP 지원</p>
             </div>
-            <div id="newsImagePreview" class="news-img-preview" style="display:none;">
-              <img id="newsPreviewImg" src="" alt="">
-              <button type="button" class="remove-img-btn" id="removeNewsImg">✕ 이미지 제거</button>
+            <div id="filePreview" class="file-preview" style="display:none;">
+              <img id="filePreviewImg" src="" alt="">
+              <button type="button" id="rmFile" class="rm-img">✕ 이미지 제거</button>
             </div>
           </div>
         </div>
-        <button type="button" id="newsUpload" class="btn-buy" style="margin-top:8px;">📰 뉴스 등록하기</button>
-        <div id="newsUploadStatus" class="upload-status"></div>
+        <button id="newsUpload" class="btn-main" style="margin-top:6px;">📰 뉴스 등록하기</button>
+        <div id="newsStatus" class="status-msg"></div>
       </div>
     </div>
-
   </div>
 </div>
 
-<!-- ===== TOAST ===== -->
+<!-- TOAST -->
 <div id="toast" class="toast"></div>
 
 <script src="script.js"></script>
