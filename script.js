@@ -1,5 +1,5 @@
 // 별도 서버를 쓰면 전체 HTTPS 주소로 바꾸세요. API 키는 넣지 마세요.
-const API_URL = "/api/chat";
+const API_URL = "https://studiostore.kr//api/chat";
 const $ = id => document.getElementById(id);
 const list = $("messages"), input = $("prompt"), status = $("status");
 let history = [], busy = false, controller;
